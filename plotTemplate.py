@@ -38,19 +38,7 @@ import math
 #       See the RatioGraph class
 #
 # * addRatioErrorBySize(self,title, size, color, fillStyle, add)
-#
 #       See the RatioGraph class
-# * addDenominator(histogram)
-#       Add histogram to list of denominators for ratio plot by which mainPlot should be divided
-#
-# * clearDenominators()
-#       Empty list of denominators
-#
-# * addNominator(histogram)
-#       Add histogram to list of nominators for efficiency plot to be divided by mainPlot
-#
-# * clearNominators()
-#       Empty list of nominators
 #
 # * addRatioPair(nominator, denominator, color)
 #       Add a pair of histograms to be drawn in the ratioGraph. This way, secondaryPlots and (de)nominators will
@@ -102,11 +90,6 @@ import math
 #       Y-axis label of ratio/efficiency graph
 # -ratioMin, ratioMax(floats):
 #       Min/Max values in ratio graph
-# -denominators(list of histograms):
-#       List of plots to divide primary plot in ratio graph. If empty, all secondary plots will be used
-# -nominators(list of histograms):
-#       List of plots to be divided by primary plot in efficiency graph. If empty, all secondary plots will 
-#       be used
 # -ratioPairs (list of tuples of histogram, histogram, color):
 #       If not equal to [], will ignore denominators and secondaryPlots and add ratios of the given pairs to
 #       the ratioPlot. Will also be used for efficiency plots.
@@ -225,8 +208,6 @@ class plotTemplate:
     efficiencyMax = 1.2
     ratioErrsSize = []
     ratioErrsHist = []
-    denominators = []
-    nominators = []
     ratioPairs = []
     hasEfficiency = False
     efficiencyOption = "cp"
@@ -266,18 +247,6 @@ class plotTemplate:
         
     def clearRatioPairs(self):
         self.ratioPairs = []
-        
-    def addNominator(self, nominator):
-        self.nominators.append(nominator)
-        
-    def clearNominators(self):
-        self.nominators = []
-        
-    def addDenominator(self, denominator):
-        self.denominators.append(denominator)
-    
-    def clearDenominators(self):
-        self.denominators = []
 
     def addRatioErrorBySize(self,title, size, color, fillStyle, add,number=0):
         self.ratioErrsSize.append((title,size,color,fillStyle,add,number))
@@ -499,14 +468,8 @@ class plotTemplate:
             self.ratioPad.cd()
             if self.hasRatio:
                 self.ratioGraphs = []
-                if self.ratioPairs == []:
-                    if self.denominators == []:
-                        self.denominators = [plot[0] for plot in self.secondaryPlots]
-                    for denominator in self.denominators:
-                        self.ratioGraphs.append(ratios.RatioGraph(self.primaryPlot[0],denominator, xMin=self.primaryPlot[0].GetXaxis().GetBinLowEdge(1), xMax=self.primaryPlot[0].GetXaxis().GetBinUpEdge(self.primaryPlot[0].GetNbinsX()),title=self.ratioLabel,yMin=self.ratioMin,yMax=self.ratioMax,ndivisions=10,color=denominator.GetMarkerColor(),  adaptiveBinning=1000))
-                else:
-                    for nominator, denominator, color in self.ratioPairs:
-                        self.ratioGraphs.append(ratios.RatioGraph(nominator, denominator, xMin=self.primaryPlot[0].GetXaxis().GetBinLowEdge(1), xMax=self.primaryPlot[0].GetXaxis().GetBinUpEdge(self.primaryPlot[0].GetNbinsX()),title=self.ratioLabel,yMin=self.ratioMin,yMax=self.ratioMax,ndivisions=10,color=color,  adaptiveBinning=1000 ))
+                for nominator, denominator, color in self.ratioPairs:
+                    self.ratioGraphs.append(ratios.RatioGraph(nominator, denominator, xMin=self.primaryPlot[0].GetXaxis().GetBinLowEdge(1), xMax=self.primaryPlot[0].GetXaxis().GetBinUpEdge(self.primaryPlot[0].GetNbinsX()),title=self.ratioLabel,yMin=self.ratioMin,yMax=self.ratioMax,ndivisions=10,color=color,  adaptiveBinning=1000 ))
                 for err in self.ratioErrsSize:
                     self.ratioGraphs[err[5]].addErrorBySize(err[0],err[1],err[2],err[3],err[4])
                 for err in self.ratioErrsHist:
@@ -518,8 +481,6 @@ class plotTemplate:
                         graph.draw(ROOT.gPad,False,False,True,chi2Pos=0.8)
             elif self.hasEfficiency:
                 self.ratioGraphs = []
-                if self.nominators == []:
-                    self.nominators = [plot[0] for plot in self.secondaryPlots]
                 self.hAxis = ROOT.TH2F("hAxis%d"%(countNumbersUp()), "", 20, self.primaryPlot[0].GetXaxis().GetBinLowEdge(1), self.primaryPlot[0].GetXaxis().GetBinUpEdge(self.primaryPlot[0].GetNbinsX()), 10, self.efficiencyMin, self.efficiencyMax)    
                 self.hAxis.GetYaxis().SetNdivisions(408)
                 self.hAxis.GetYaxis().SetTitleOffset(0.4)
@@ -528,21 +489,12 @@ class plotTemplate:
                 self.hAxis.GetYaxis().SetLabelSize(0.15)
                 self.hAxis.GetYaxis().SetTitle(self.efficiencyLabel)
                 self.hAxis.Draw("AXIS")
-                
-                if self.ratioPairs == []:
-                    for nominator in self.nominators:
-                        tmp = ROOT.TGraphAsymmErrors(nominator,self.primaryPlot[0], self.efficiencyOption)
-                        tmp.SetMarkerColor(nominator.GetMarkerColor())
-                        tmp.SetLineColor(nominator.GetLineColor())
-                        self.ratioGraphs.append(tmp)
-                        self.ratioGraphs[len(self.ratioGraphs)-1].Draw("same P")
-                else:
-                    for nominator, denominator, color in self.ratioPairs:
-                        tmp = ROOT.TGraphAsymmErrors(nominator,denominator, self.efficiencyOption)
-                        tmp.SetMarkerColor(color)
-                        tmp.SetLineColor(color)
-                        self.ratioGraphs.append(tmp)
-                        self.ratioGraphs[len(self.ratioGraphs)-1].Draw("same P")
+                for nominator, denominator, color in self.ratioPairs:
+                    tmp = ROOT.TGraphAsymmErrors(nominator,denominator, self.efficiencyOption)
+                    tmp.SetMarkerColor(color)
+                    tmp.SetLineColor(color)
+                    self.ratioGraphs.append(tmp)
+                    self.ratioGraphs[len(self.ratioGraphs)-1].Draw("same P")
 
 
 class plotTemplate2D(plotTemplate):
