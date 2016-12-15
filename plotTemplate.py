@@ -4,15 +4,10 @@ from frameworkStructure import pathes
 sys.path.append(pathes.basePath)
 
 import ROOT
-ROOT.PyConfig.IgnoreCommandLineOptions = True
 import ratios
-from defs import defineMyColors
-from defs import myColors   
 
 from setTDRStyle import setTDRStyle
-from helpers import *   
-colors = createMyColors() 
-import math
+from helpers import *    
 
 ################## SUMMARY OF CLASS plotTemplate ############################################################
 ## Constructors:
