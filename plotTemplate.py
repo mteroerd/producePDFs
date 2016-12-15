@@ -17,9 +17,6 @@ import math
 ################## SUMMARY OF CLASS plotTemplate ############################################################
 ## Constructors:
 # * plotTemplate()
-# * plotTemplate(mainConfig)
-#       Applies some options from the mainConfig to the template:
-#           axis titles from plot, private work, plot data, jzb type, integrated lumi from run range
 #
 ## Methods:
 # * setPrimaryPlot(plot, drawOption)
@@ -80,8 +77,6 @@ import math
 #       Set axis title of primary plot, None (default) will not change titles of primary plot
 # -marginTop, marginBottom, marginLeft, marginRight(floats): 
 #       Pad margins
-# -jzbType, useJZBPath(string, bool): 
-#       Type of used jzb, should it be used in the path when calling saveAs (True by default)
 # -personalWork, preliminary, forTWIKI, plotData(bools): 
 #       For text below CMS logo. Default: True, False, False, False
 # -hasRatio, hasEfficiency(bools): 
