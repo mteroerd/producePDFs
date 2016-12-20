@@ -44,8 +44,14 @@ from helpers import *
 # * draw()
 #       Draw full canvas
 #
+# * drawCanvas()
+#       Draws canvas and pads in case one does not want to use draw()
+#
 # * drawLatexLabels()
-#       If any of the labels were changed after calling draw(), this can be called to redraw all the labels
+#       If any of the labels were changed after calling draw() or one does not want to use draw(), this can be called to (re)draw all the labels
+#
+# * drawRatioPlot()
+#       Draws all ratio or efficiency plots that were added as ratio pairs
 #
 # * setFolderPath(folderName)
 #       Set Name of folder in fig/ to store output
@@ -71,7 +77,7 @@ from helpers import *
 # -labelX,labelY,labelZ(strings): 
 #       Set axis title of primary plot, None (default) will not change titles of primary plot
 # -marginTop, marginBottom, marginLeft, marginRight(floats): 
-#       Pad margins
+#       Pad outer margins
 # -personalWork, preliminary, forTWIKI, plotData(bools): 
 #       For text below CMS logo. Default: True, False, False, False
 # -hasRatio, hasEfficiency(bools): 
@@ -81,8 +87,7 @@ from helpers import *
 # -ratioMin, ratioMax(floats):
 #       Min/Max values in ratio graph
 # -ratioPairs (list of tuples of histogram, histogram, color):
-#       If not equal to [], will ignore denominators and secondaryPlots and add ratios of the given pairs to
-#       the ratioPlot. Will also be used for efficiency plots.
+#       If not equal to [], will add ratios of the given pairs to the ratioPlot. Will also be used for efficiency plots.
 # -redrawPrimary(bool):
 #       Should primary plot be redrawn to be on top of other plots. On by default, not recommended for 2D plots
 # -dilepton (string):
@@ -184,6 +189,20 @@ class plotTemplate:
     cutsText = None
     cutsColor = ROOT.kBlack
     ##############
+    hasLegend = False
+    legend = None
+    legendColumns = 1
+    legendPosX1 = 0.55
+    legendPosX2 = 0.90
+    legendPosY1 = 0.55
+    legendPosY2 = 0.70
+    legendFont = 42
+    legendTextSize = 0.03
+    legendTextColor = 1
+    legendBorderSize = 0
+    legendFillColor = 0
+    legendFillStyle = 0
+    ##############    
     
     labelX = None
     labelY = None
@@ -199,9 +218,11 @@ class plotTemplate:
     ratioErrsSize = []
     ratioErrsHist = []
     ratioPairs = []
+    ratioPadHeight = 0.3
     hasEfficiency = False
     efficiencyOption = "cp"
     hasRatio = False
+    hasBottomWindow = False
     
     forTWIKI = False
     preliminary = False
@@ -232,8 +253,8 @@ class plotTemplate:
         
     
     
-    def addRatioPair(self, nominator, denominator, color=ROOT.kBlack):
-        self.ratioPairs.append((nominator, denominator, color))
+    def addRatioPair(self, nominator, denominator, color=ROOT.kBlack, markerstyle=20):
+        self.ratioPairs.append((nominator, denominator, color, markerstyle))
         
     def clearRatioPairs(self):
         self.ratioPairs = []
@@ -253,30 +274,30 @@ class plotTemplate:
         for typ in self.fileTypes:
             self.canvas.Print(self.pathName+fileName+"."+typ)
     
-    def setPrimaryPlot(self,hist, drawOption):
-        self.primaryPlot = (hist, drawOption)
+    def setPrimaryPlot(self,hist, drawOption, label=None):
+        self.primaryPlot = (hist, drawOption, label)
     
-    def addSecondaryPlot(self,hist, drawOption=""):
-        self.secondaryPlots.append((hist,drawOption))
+    def addSecondaryPlot(self,hist, drawOption="", label = None):
+        self.secondaryPlots.append((hist, drawOption, label))
     
     def clearSecondaryPlots(self):
         self.secondaryPlots = []
     
     def drawCanvas(self):
         self.canvas = ROOT.TCanvas("hCanvas%d"%(countNumbersUp()), "", 800,800)
-        if self.hasRatio or self.hasEfficiency:
-            self.plotPad = ROOT.TPad("plotPad","plotPad",0,0.3,1,1)
+        if self.hasRatio or self.hasEfficiency or self.hasBottomWindow:
+            self.plotPad = ROOT.TPad("plotPad","plotPad",0,self.ratioPadHeight,1,1)
         else:
             self.plotPad = ROOT.TPad("plotPad","plotPad",0,0,1,1)
         self.plotPad.UseCurrentStyle()
         self.plotPad.Draw()  
         
-        if self.hasRatio or self.hasEfficiency:
-            self.ratioPad = ROOT.TPad("ratioPad","ratioPad",0,0,1,0.3)
+        if self.hasRatio or self.hasEfficiency or self.hasBottomWindow:
+            self.ratioPad = ROOT.TPad("ratioPad","ratioPad",0,0,1,self.ratioPadHeight)
             self.ratioPad.UseCurrentStyle()
             self.ratioPad.Draw()
          
-        if self.hasRatio or self.hasEfficiency:
+        if self.hasRatio or self.hasEfficiency or self.hasBottomWindow:
             self.plotPad.SetTopMargin    (self.marginTop)
             self.plotPad.SetLeftMargin   (self.marginLeft)
             self.plotPad.SetRightMargin  (self.marginRight)
@@ -293,7 +314,7 @@ class plotTemplate:
         
         if self.logX:
             self.plotPad.SetLogx()
-            if self.hasRatio or self.hasEfficiency:
+            if self.hasRatio or self.hasEfficiency or self.hasBottomWindow:
                 self.ratioPad.SetLogx()
         if self.logY:
             self.plotPad.SetLogy()
@@ -407,10 +428,9 @@ class plotTemplate:
         self.latexLumi      = None
         self.latexRegion    = None
         self.primaryPlot    = None
+        self.legend         = None
         self.secondaryPlots = []
         self.ratioGraphs    = []
-        self.denominators   = []
-        self.nominators     = []
         self.ratioPairs     = []
         self.pathName       = "fig/"
         self.folderName     = ""
@@ -418,6 +438,44 @@ class plotTemplate:
         self.plotPad        = None
         self.ratioPad       = None
     
+    def drawRatioPlots(self):
+        if self.hasRatio or self.hasEfficiency:
+            self.ratioPad.cd()
+            if self.hasRatio:
+                self.ratioGraphs = []
+                for nominator, denominator, color, markerstyle in self.ratioPairs:
+                    self.ratioGraphs.append(ratios.RatioGraph(nominator, denominator, xMin=self.primaryPlot[0].GetXaxis().GetBinLowEdge(1), xMax=self.primaryPlot[0].GetXaxis().GetBinUpEdge(self.primaryPlot[0].GetNbinsX()),title=self.ratioLabel,yMin=self.ratioMin,yMax=self.ratioMax,ndivisions=10,color=color,  adaptiveBinning=1000 ))
+                for err in self.ratioErrsSize:
+                    self.ratioGraphs[err[5]].addErrorBySize(err[0],err[1],err[2],err[3],err[4])
+                for err in self.ratioErrsHist:
+                    self.ratioGraphs[err[5]].addErrorByHistograms(err[0],err[1],err[2],err[3],err[4])
+                for number,graph in enumerate(self.ratioGraphs):
+                    if number == 0:
+                        graph.draw(ROOT.gPad,True,False,True,chi2Pos=0.8)
+                        graph.hAxis.GetXaxis().SetNdivisions(self.primaryPlot[0].GetXaxis().GetNdivisions())
+                    else:
+                        graph.draw(ROOT.gPad,False,False,True,chi2Pos=0.8)
+                    graph.graph.SetMarkerStyle(markerstyle)
+                    
+            elif self.hasEfficiency:
+                self.ratioGraphs = []
+                self.hAxis = ROOT.TH2F("hAxis%d"%(countNumbersUp()), "", 20, self.primaryPlot[0].GetXaxis().GetBinLowEdge(1), self.primaryPlot[0].GetXaxis().GetBinUpEdge(self.primaryPlot[0].GetNbinsX()), 10, self.efficiencyMin, self.efficiencyMax)    
+                self.hAxis.GetYaxis().SetNdivisions(408)
+                self.hAxis.GetYaxis().SetTitleOffset(0.4)
+                self.hAxis.GetYaxis().SetTitleSize(0.15)
+                self.hAxis.GetXaxis().SetLabelSize(0.0)
+                self.hAxis.GetYaxis().SetLabelSize(0.15)
+                self.hAxis.GetXaxis().SetNdivisions(self.primaryPlot[0].GetXaxis().GetNdivisions())
+                self.hAxis.GetYaxis().SetTitle(self.efficiencyLabel)
+                self.hAxis.Draw("AXIS")
+                for nominator, denominator, color, markerstyle in self.ratioPairs:
+                    tmp = ROOT.TGraphAsymmErrors(nominator,denominator, self.efficiencyOption)
+                    tmp.SetMarkerColor(color)
+                    tmp.SetLineColor(color)
+                    tmp.SetMarkerStyle(markerstyle)
+                    self.ratioGraphs.append(tmp)
+                    self.ratioGraphs[len(self.ratioGraphs)-1].Draw("same P")
+
     def draw(self):
         self.drawCanvas()
           
@@ -435,58 +493,45 @@ class plotTemplate:
             self.primaryPlot[0].GetYaxis().SetTitle(self.labelY)
         if self.labelZ != None:
             self.primaryPlot[0].GetZaxis().SetTitle(self.labelZ)
-        
+
         if self.nDivs != None:
             self.primaryPlot[0].GetXaxis().SetNdivisions(self.nDivs)
-            
+        
         self.primaryPlot[0].Draw(self.primaryPlot[1])
         
-        for plot, drawStyle in self.secondaryPlots:
+        for plot, drawStyle, label in self.secondaryPlots:
             plot.Draw(drawStyle+"same")
          
         if self.redrawPrimary:
             self.primaryPlot[0].Draw(self.primaryPlot[1]+"same")
-         
         
         self.drawLatexLabels()
+        
+        self.drawLegend()
+        
         self.plotPad.RedrawAxis()
         
         self.drawRatioPlots()
-        
-    def drawRatioPlots(self):
-        if self.hasRatio or self.hasEfficiency:
-            self.ratioPad.cd()
-            if self.hasRatio:
-                self.ratioGraphs = []
-                for nominator, denominator, color in self.ratioPairs:
-                    self.ratioGraphs.append(ratios.RatioGraph(nominator, denominator, xMin=self.primaryPlot[0].GetXaxis().GetBinLowEdge(1), xMax=self.primaryPlot[0].GetXaxis().GetBinUpEdge(self.primaryPlot[0].GetNbinsX()),title=self.ratioLabel,yMin=self.ratioMin,yMax=self.ratioMax,ndivisions=10,color=color,  adaptiveBinning=1000 ))
-                for err in self.ratioErrsSize:
-                    self.ratioGraphs[err[5]].addErrorBySize(err[0],err[1],err[2],err[3],err[4])
-                for err in self.ratioErrsHist:
-                    self.ratioGraphs[err[5]].addErrorByHistograms(err[0],err[1],err[2],err[3],err[4])
-                for number,graph in enumerate(self.ratioGraphs):
-                    if number == 0:
-                        graph.draw(ROOT.gPad,True,False,True,chi2Pos=0.8)
-                    else:
-                        graph.draw(ROOT.gPad,False,False,True,chi2Pos=0.8)
-            elif self.hasEfficiency:
-                self.ratioGraphs = []
-                self.hAxis = ROOT.TH2F("hAxis%d"%(countNumbersUp()), "", 20, self.primaryPlot[0].GetXaxis().GetBinLowEdge(1), self.primaryPlot[0].GetXaxis().GetBinUpEdge(self.primaryPlot[0].GetNbinsX()), 10, self.efficiencyMin, self.efficiencyMax)    
-                self.hAxis.GetYaxis().SetNdivisions(408)
-                self.hAxis.GetYaxis().SetTitleOffset(0.4)
-                self.hAxis.GetYaxis().SetTitleSize(0.15)
-                self.hAxis.GetXaxis().SetLabelSize(0.0)
-                self.hAxis.GetYaxis().SetLabelSize(0.15)
-                self.hAxis.GetYaxis().SetTitle(self.efficiencyLabel)
-                self.hAxis.Draw("AXIS")
-                for nominator, denominator, color in self.ratioPairs:
-                    tmp = ROOT.TGraphAsymmErrors(nominator,denominator, self.efficiencyOption)
-                    tmp.SetMarkerColor(color)
-                    tmp.SetLineColor(color)
-                    self.ratioGraphs.append(tmp)
-                    self.ratioGraphs[len(self.ratioGraphs)-1].Draw("same P")
-
-
+    
+    def drawLegend(self):
+        if self.hasLegend:
+            if self.legend == None:
+                self.legend = ROOT.TLegend(self.legendPosX1, self.legendPosY1, self.legendPosX2, self.legendPosY2)
+            self.legend.SetTextSize(self.legendTextSize)
+            self.legend.SetTextFont(self.legendFont)
+            self.legend.SetTextColor(self.legendTextColor)
+            self.legend.SetBorderSize(self.legendBorderSize)
+            self.legend.SetNColumns(self.legendColumns)
+            self.legend.SetFillStyle(self.legendFillStyle)
+            self.legend.SetFillColor(self.legendFillColor)
+            
+            for plot, drawOption, label in [self.primaryPlot]+self.secondaryPlots:
+                if label != None:
+                    drawOpt = drawOption.replace("hist","l")
+                    self.legend.AddEntry(plot, label, drawOpt)
+            
+            self.legend.Draw("same")
+            
 class plotTemplate2D(plotTemplate):
     marginRight = 0.2
     regionPosX = 0.78
@@ -494,6 +539,8 @@ class plotTemplate2D(plotTemplate):
     redrawPrimary = False
     maximumScale = 1.1
     
-    def __init__(self, mainConfig=None):
+    def __init__(self):
         plotTemplate.__init__(self)
         
+
+    

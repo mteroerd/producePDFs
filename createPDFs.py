@@ -137,7 +137,7 @@ def fitVariables(useExistingDataSet, runRange, region, puReweighting, verbose):
         
         #Read in and convert dilepton trees of data and mc
         (ttOF, ttEE, ttMM) = getMCTrees(theConfig)
-        dataOFraw = getTreeFromDataset(theConfig.dataSetPath, theConfig.flag, theConfig.task, theConfig.dataset, "/EMuDileptonTree", cut=theConfig.selection.cut)
+        dataOFraw = getTreeFromDataset(theConfig.dataSetPath, theConfig.flag, theConfig.task, theConfig.dataset, runRange, "/EMuDileptonTree", cut=theConfig.selection.cut)
         dataOF = convertDileptonTree(dataOFraw)
 
         #Initialize RooVars and prepare trees as datasets
@@ -182,7 +182,7 @@ def fitVariables(useExistingDataSet, runRange, region, puReweighting, verbose):
     
     ws = ROOT.RooWorkspace("w", ROOT.kTRUE)
     
-    #do fitting
+    print "Starting fits"
     for vari, title, binning in tasks:
         dataFit = getFitPDF(w, vari, "OF", False)
         mcFitOF = getFitPDF(w, vari, "OF", True )
@@ -226,12 +226,14 @@ def fitVariables(useExistingDataSet, runRange, region, puReweighting, verbose):
         
         leg.Draw("same")
         
+        
         template.saveAs(vari+"_fit_"+theConfig.runRange.label)
     
         getattr(ws,"import")(dataFit)
         getattr(ws,"import")(mcFitOF)
         getattr(ws,"import")(mcFitSF)
 
+    print "Fits are done"
     allObj = None
     ws.Print()
     fileName = "workspaces/workspace_NLLpdfs_%s_%s.root"%(theConfig.flag,theConfig.runRange.label)
@@ -242,11 +244,11 @@ def fitVariables(useExistingDataSet, runRange, region, puReweighting, verbose):
     
     
 def main():
-    parser = argparse.ArgumentParser(description='edge fitter reloaded.')
+    parser = argparse.ArgumentParser(description='Create PDFs for NLL')
     
     parser.add_argument("-s", "--selection", dest = "selection" , action="store", default="SignalInclusive",
                           help="selection which to apply.")
-    parser.add_argument("-r", "--runRange", dest="runRange", action="store", default="Run2016_7_7fb",
+    parser.add_argument("-r", "--runRange", dest="runRange", action="store", default="Run2016_12_9fb",
                           help="name of run range.")
     parser.add_argument("-u", "--use", action="store_true", dest="useExisting", default=False,
                           help="use existing datasets from workspace, default is false.")

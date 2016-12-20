@@ -118,7 +118,6 @@ def comparePDFs(dataSpace,pdfSpace, pdfSpace2,isMC):
         
         
         drawOption1 = "PE" if (isMC==0) else "hist"
-        drawOption2 = "PE" if (isMC==0) else "L"
         
         if isMC == 0:
                 label = "- data OF"
@@ -129,22 +128,17 @@ def comparePDFs(dataSpace,pdfSpace, pdfSpace2,isMC):
         elif isMC == 2:
                 label = "- ttbar SF"
                 fileSuffix = "_ttbarSF"
-                
-        leg = ROOT.TLegend(0.6, 0.7, 0.8, 0.85)
-        leg.AddEntry(h1, "Own PDFs %s"%(label), drawOption2)
-        leg.AddEntry(h2, "ETH PDFs %s"%(label), drawOption2)
-        leg.SetTextSize(0.03)
-        leg.SetTextFont(42)
         
         template = plotTemplate()
         template.plotData = (isMC == 0)
         template.labelX = "NLL"
         template.labelY = "normalized units"
         template.minimum = 0
-        template.setPrimaryPlot(h1, drawOption1)
-        template.addSecondaryPlot(h2, drawOption1)
-        template.addSecondaryPlot(leg)
+        template.setPrimaryPlot(h1, drawOption1, "Own PDFs %s"%(label))
+        template.addSecondaryPlot(h2, drawOption1,"ETH PDFs %s"%(label))
         template.nDivs = 506
+        template.hasLegend = True
+        
         template.draw()
         
         template.setFolderName("evaluation")
@@ -166,12 +160,11 @@ def comparePDFs(dataSpace,pdfSpace, pdfSpace2,isMC):
 def main():
         isMC = 1
         
-        
-        dataFilePath = "workspaces/saveDataSet_sw8010v1010_Run2016_7_7fb_noWeights.root"
+        dataFilePath = "workspaces/saveDataSet_sw8021v1015_Run2016_12_9fb_noWeights.root"
         dataFile = ROOT.TFile(dataFilePath, "READ")
         dataSpace = dataFile.Get("work")
         
-        pdfFilePath = "workspaces/workspace_NLLpdfs_sw8010v1010_Run2016_7_7fb.root"
+        pdfFilePath = "workspaces/workspace_NLLpdfs_sw8021v1015_Run2016_12_9fb.root"
         pdfFile = ROOT.TFile(pdfFilePath, "READ")
         pdfSpace = pdfFile.Get("w")
         
