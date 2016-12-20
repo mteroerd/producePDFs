@@ -9,19 +9,19 @@ import ratios
 from setTDRStyle import setTDRStyle
 from helpers import *    
 
-################## SUMMARY OF CLASS plotTemplate ############################################################
+################## SUMMARY OF CLASS plotTemplate #######################
 ## Constructors:
 # * plotTemplate()
 #
 ## Methods:
 # * setPrimaryPlot(plot, drawOption)
-#       Plot (histogram, graph) to be drawn first with drawOption, defining the axes and boundaries, redrawn 
+#       Plot (histogram, graph) to be drawn first with drawOption, 
+#       defining the axes and boundaries, redrawn 
 #       after secondary plots by default so it will be on top
 #
 # * addSecondaryPlot(plot, drawOption)
-#       Adds plot (anything with Draw(drawOption) method in root) to list of secondary plots
-#       In ratio graphs, primary plot / secondary plots is drawn, if denominators was not set
-#       In efficiency graphs, secondary plots / primary plot is drawn
+#       Adds plot (anything with Draw(drawOption) method in root) to 
+#       list of secondary plots
 #
 # * clearSecondaryPlots()
 #       Resets list of secondary plots
@@ -33,10 +33,8 @@ from helpers import *
 #       See the RatioGraph class
 #
 # * addRatioPair(nominator, denominator, color)
-#       Add a pair of histograms to be drawn in the ratioGraph. This way, secondaryPlots and (de)nominators will
-#       be ignored for the ratio/efficiency and only ratioPairs will be drawn. Useful if there
-#       is no real primary histogram to relate other histograms to, but multiple ratios are to be made or 
-#       the ratios are not related to the plots in plotPad. Will also be used for efficiency plots.
+#       Add a pair of histograms to be drawn in the ratioGraph. Will 
+#       also be used for efficiency plots.
 #
 # * clearRatioPairs()
 #       Empty list of ratioPairs
@@ -48,10 +46,13 @@ from helpers import *
 #       Draws canvas and pads in case one does not want to use draw()
 #
 # * drawLatexLabels()
-#       If any of the labels were changed after calling draw() or one does not want to use draw(), this can be called to (re)draw all the labels
+#       If any of the labels were changed after calling draw() or one 
+#       does not want to use draw(), this can be called to (re)draw all 
+#       the labels
 #
 # * drawRatioPlot()
-#       Draws all ratio or efficiency plots that were added as ratio pairs
+#       Draws all ratio or efficiency plots that were added as ratio 
+#       pairs
 #
 # * drawLegend()
 #       Draws legend of all plots with specified labels if hasLegend is True
@@ -60,8 +61,9 @@ from helpers import *
 #       Set Name of folder in fig/ to store output
 #
 # * saveAs(fileName)
-#       Print canvas to fileName in folder that was defined earlier, prints with all defined filetypes, so 
-#       fileName does not contain file ending
+#       Print canvas to fileName in folder that was defined earlier, 
+#       prints with all defined filetypes, so fileName should not contain 
+#       file ending
 #
 # * clean()
 #       Sets all objects in plotTemplate to None
@@ -71,12 +73,14 @@ from helpers import *
 # -logX,logY,logZ(bools): 
 #       Draw axis with logarithmic scale, false by default
 # -changeScale(bool):
-#       True by default, defines if the minimum/maximum of primaryPlot should be adjusted by 
-#       maximumScale or minimum/maximum. Should be turned to False if primaryPlot is not a Histogramm
+#       True by default, defines if the minimum/maximum of primaryPlot 
+#       should be adjusted by maximumScale or minimum/maximum. Should be
+#       turned to False if primaryPlot is not a Histogramm
 # -maximumScale(float):
 #       Maximum of plot scaled by maximum value of primary plot
 # -minimum, maximum(floats):
-#       Overwrites maximum scale, set minimum and maximum y-value(z-value for 2D plots) of primary plot
+#       Overwrites maximum scale, set minimum and maximum y-value 
+#       (z-value for 2D plots) of primary plot
 # -labelX,labelY,labelZ(strings): 
 #       Set axis title of primary plot, None (default) will not change titles of primary plot
 # -marginTop, marginBottom, marginLeft, marginRight(floats): 
@@ -246,8 +250,6 @@ class plotTemplate:
         self.ratioErrsHist = []
         
         self.ratioPairs = []
-        self.nominators = []
-        self.denominators = []
         setTDRStyle() 
         
         self.latexCMS      = None
