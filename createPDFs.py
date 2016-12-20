@@ -137,7 +137,7 @@ def fitVariables(useExistingDataSet, runRange, region, puReweighting, verbose):
         
         #Read in and convert dilepton trees of data and mc
         (ttOF, ttEE, ttMM) = getMCTrees(theConfig)
-        dataOFraw = getTreeFromDataset(theConfig.dataSetPath, theConfig.flag, theConfig.task, theConfig.dataset, runRange, "/EMuDileptonTree", cut=theConfig.selection.cut)
+        dataOFraw = getTreeFromDataset(theConfig.dataSetPath, theConfig.flag, theConfig.task, theConfig.dataset, theConfig.runRange, "/EMuDileptonTree", cut=theConfig.selection.cut)
         dataOF = convertDileptonTree(dataOFraw)
 
         #Initialize RooVars and prepare trees as datasets

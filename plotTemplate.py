@@ -53,6 +53,9 @@ from helpers import *
 # * drawRatioPlot()
 #       Draws all ratio or efficiency plots that were added as ratio pairs
 #
+# * drawLegend()
+#       Draws legend of all plots with specified labels if hasLegend is True
+#
 # * setFolderPath(folderName)
 #       Set Name of folder in fig/ to store output
 #
@@ -80,8 +83,10 @@ from helpers import *
 #       Pad outer margins
 # -personalWork, preliminary, forTWIKI, plotData(bools): 
 #       For text below CMS logo. Default: True, False, False, False
-# -hasRatio, hasEfficiency(bools): 
-#       Draw ratio/efficiency graph, if both are true, only ratio graph is drawn. Default: False
+# -hasRatio, hasEfficiency, hasBottomWindow(bools): 
+#       Draw ratio/efficiency graph, if both are true, only ratio graph is drawn. hasBottomWindow only creates lower pad. Default: False
+# -hasLegend (bool):
+#       Automatically draw legend of all added plots that have specified labels
 # -ratioLabel, efficiencyLabel(strings): 
 #       Y-axis label of ratio/efficiency graph
 # -ratioMin, ratioMax(floats):
@@ -96,7 +101,7 @@ from helpers import *
 # -fileTypes (list of strings):
 #       List of file endings to print the canvas into. Default: ["pdf"]
 #  ---
-# Following members are for latex labels of cms, cmsExtra, region, cuts
+# Following members are for latex labels of cms, cmsExtra, region, cuts, lumi
 #  -#PosX, #PosY (floats): 
 #       Position of label in NDC. lumiPosX is always used with -(marginRight-0.05) as an offset, so it
 #       will be aligned to the edge of the plot if a right margin is introduced

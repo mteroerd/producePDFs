@@ -57,11 +57,12 @@ def getMCTrees(theConfig):
             treeMCEEraw = getTreeFromJob(theConfig.dataSetPath, theConfig.flag, theConfig.task, job, theConfig.runRange, treePathEE, cut=cut)
             treeMCMMraw = getTreeFromJob(theConfig.dataSetPath, theConfig.flag, theConfig.task, job, theConfig.runRange, treePathMM, cut=cut)
             
-            dynXsection = eval(config.get(job,"crosssection"))
-            from helpers import totalNumberOfGeneratedEvents
-            dynNTotal = totalNumberOfGeneratedEvents(theConfig.dataSetPath)[job]
+            #dynXsection = eval(config.get(job,"crosssection"))
+            #from helpers import totalNumberOfGeneratedEvents
+            #dynNTotal = totalNumberOfGeneratedEvents(theConfig.dataSetPath)[job]
             
-            dynScale = dynXsection * theConfig.runRange.lumi / dynNTotal
+            #dynScale = dynXsection * theConfig.runRange.lumi / dynNTotal
+            dynScale = 1 # No scaling to xsec
             
             # convert trees
             treesMCOF.Add(convertDileptonTree(treeMCOFraw, weight=dynScale))
