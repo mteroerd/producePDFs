@@ -1,0 +1,21 @@
+syntax: glob
+*.root
+*.aux
+*.log
+*.nav
+*.snm
+*.toc
+*.synctex.gz
+*.out
+*.pyc
+*.db
+*.pdf
+*.png
+*.root
+*.tex
+*.d
+*.so
+
+fig/*
+workspaces/*
+
