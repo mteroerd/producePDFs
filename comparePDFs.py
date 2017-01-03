@@ -54,7 +54,7 @@ def comparePDFs(dataSpace,pdfSpace, pdfSpace2,isMC):
         setTDRStyle()
         h1 = ROOT.TH1F("h1", "", 27, 10, 37)
         h2 = ROOT.TH1F("h2", "", 27, 10, 37)        
-        hDiff = ROOT.TH1F("hDiff", "", 50, -1, 1)        
+        hDiff = ROOT.TH1F("hDiff", "", 101, -1.005, 1.005)        
         
         h1.Sumw2()
         h2.Sumw2()
@@ -148,7 +148,8 @@ def comparePDFs(dataSpace,pdfSpace, pdfSpace2,isMC):
         template.plotData = (isMC == 0)
         template.labelX = "#Delta(NLL_{own},NLL_{ETH})"
         template.labelY = "normalized units"
-        template.setPrimaryPlot(hDiff, drawOption1)
+        template.minimum = 0
+        template.setPrimaryPlot(hDiff, "hist")
         template.draw()
         
         template.setFolderName("evaluation")
@@ -157,26 +158,88 @@ def comparePDFs(dataSpace,pdfSpace, pdfSpace2,isMC):
         #raw_input("...")
                                   
 
+def compareParameters(pdfSpace, pdfSpace2):
+        args  = pdfSpace.allVars()
+        args2 = pdfSpace2.allVars()
+        
+        it = args.createIterator()
+        while it:
+                if it == None:
+                        break
+                try:
+                        print "RWTH %-*s | %-*.4f | %-*.4f | %-*.4f"%(15, it.GetName(), 8, it.getBinning().lowBound(), 8, it.getBinning().highBound(), 8, it.getValV())
+                        it2 = args2.find(it.GetName())
+                        print "ETH  %-*s | %-*.4f | %-*.4f | %-*.4f"%(15, it2.GetName(), 8, it2.getBinning().lowBound(), 8, it2.getBinning().highBound(), 8, it2.getValV())
+                        print
+                except:
+                        break
+                it.Next()
+        
+        #pdfSpace2.Print()
+
+def printMaxVals(workspace, dataset):
+        dat = workspace.data(dataset)
+        minMet = 1000
+        maxMet = 0
+        minMlb = 3000
+        maxMlb = 0
+        minZpt = 1000
+        maxZpt = 0
+        minLdp = 3.2
+        maxLdp = 0
+        for i in range(dat.numEntries()):
+                point = dat.get(i)
+                met = point.getRealValue("met_Edge")
+                if met < minMet:
+                        minMet = met
+                elif met > maxMet:
+                        maxMet = met
+                        
+                mlb = point.getRealValue("sum_mlb_Edge")
+                if mlb < minMlb:
+                        minMlb = mlb
+                elif mlb > maxMlb:
+                        maxMlb = mlb
+                        
+                zpt = point.getRealValue("lepsZPt_Edge")
+                if zpt < minZpt:
+                        minZpt = zpt
+                elif zpt > maxZpt:
+                        maxZpt = zpt
+                        
+                ldp = point.getRealValue("lepsDPhi_Edge")
+                if ldp < minLdp:
+                        minLdp = ldp
+                elif ldp > maxLdp:
+                        maxLdp = ldp
+        print "met ", minMet, maxMet
+        print "mlb ", minMlb, maxMlb
+        print "zpt ", minZpt, maxZpt
+        print "ldp ", minLdp, maxLdp        
+
 def main():
         isMC = 1
         
-        dataFilePath = "workspaces/saveDataSet_sw8021v1015_Run2016_12_9fb_noWeights.root"
+        dataFilePath = "workspaces/saveDataSet_sw8021v1015_Run2016_36fb_noWeights.root"
         dataFile = ROOT.TFile(dataFilePath, "READ")
         dataSpace = dataFile.Get("work")
         
-        pdfFilePath = "workspaces/workspace_NLLpdfs_sw8021v1015_Run2016_12_9fb.root"
+        pdfFilePath = "workspaces/workspace_NLLpdfs_sw8021v1015_Run2016_36fb.root"
         pdfFile = ROOT.TFile(pdfFilePath, "READ")
         pdfSpace = pdfFile.Get("w")
         
         
-        pdfFilePath2 = "pdfs_version5_80X_2016Data_savingTheWorkspace_withSFPDFs_12p9invfb.root"
+        pdfFilePath2 = "pdfs_forMoriond_ver2.root"
+        #pdfFilePath2 = "pdfs_version5_80X_2016Data_savingTheWorkspace_withSFPDFs_12p9invfb.root"
         pdfFile2 = ROOT.TFile(pdfFilePath2, "READ")
         pdfSpace2 = pdfFile2.Get("w")
         
         
-        #dataSpace.Print()
-        #pdfSpace.Print()
-        #pdfSpace2.Print()
+        #compareParameters(pdfSpace, pdfSpace2)
+        #printMaxVals(dataSpace, "dataOF")
+        #printMaxVals(pdfSpace2, "em_data_cuts_of_sr_met150_of")
+        #return
+        
         for isMC in [0,1,2]:
                 comparePDFs(dataSpace, pdfSpace, pdfSpace2, isMC)
         

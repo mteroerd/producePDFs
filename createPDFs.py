@@ -51,9 +51,12 @@ allObj = []
 
 def getFitPDF(w, vari, dilepton, isMc):
     if isMc:
-        nameSuffix = "_"+dilepton+"ttbar"
+        if dilepton == "OF":
+            nameSuffix = "MC"
+        else:
+            nameSuffix = "MC_SF"
     else:
-        nameSuffix = "_"+dilepton+"data"
+        nameSuffix = "DA"
     
     if   vari == "met_Edge":
         pdfName = "met_analyticalPDF_"
@@ -64,23 +67,18 @@ def getFitPDF(w, vari, dilepton, isMc):
     elif vari == "sum_mlb_Edge":
         pdfName = "mlb_analyticalPDF_"
         
-    if not isMc:
-        pdfName += "DA"
-    elif dilepton == "OF":
-        pdfName += "MC"
-    else:
-        pdfName += "MC_SF"
+    pdfName += nameSuffix
     
     shapes = ROOT.RooArgList()
     yields = ROOT.RooArgList()
     
     if vari == "met_Edge":
-        a = ROOT.RooRealVar("exponential1par%s"%(nameSuffix), "a",-0.05, -2, 0)
-        b = ROOT.RooRealVar("exponential2par%s"%(nameSuffix), "b",-0.05, -2, 0)
+        a = ROOT.RooRealVar("met_c0_%s"%(nameSuffix), "a",-0.03, -1, 0)
+        b = ROOT.RooRealVar("met_c1_%s"%(nameSuffix), "b",-0.01, -0.05, -0.005)
         exp1 = ROOT.RooExponential("exponential1%s"%(nameSuffix), "exponential1", w.var(vari), a)
         exp2 = ROOT.RooExponential("exponential2%s"%(nameSuffix), "exponential2", w.var(vari), b)
-        yield1 = ROOT.RooRealVar    ("expoyield1%s"%(nameSuffix), "expoyield1",50,0,1000)
-        yield2 = ROOT.RooRealVar    ("expoyield2%s"%(nameSuffix), "expoyield2",100,0,1000)
+        yield1 = ROOT.RooRealVar    ("met_n1_%s"%(nameSuffix), "expoyield1",2400,0,10000)
+        yield2 = ROOT.RooRealVar    ("met_n2_%s"%(nameSuffix), "expoyield2",1200,0,10000)
         shapes.add(exp1)
         yields.add(yield1)
         shapes.add(exp2)
@@ -89,28 +87,32 @@ def getFitPDF(w, vari, dilepton, isMc):
         fitFunc = ROOT.RooAddPdf(pdfName, pdfName, shapes, yields)
         
     elif vari == "lepsDPhi_Edge":
-        a = ROOT.RooRealVar("polynompar1%s"%(nameSuffix), "a", 0.1, -5, 5)
-        b = ROOT.RooRealVar("polynompar2%s"%(nameSuffix), "b", 0.3, -5, 5)
-        pol = ROOT.RooPolynomial(pdfName, "polynomial", w.var(vari), ROOT.RooArgList(a, b))
+        a = ROOT.RooRealVar("ldp_a0_%s"%(nameSuffix), "a", 0.1, 0, 2)
+        b = ROOT.RooRealVar("ldp_a2_%s"%(nameSuffix), "b", 0.3, 0, 2)
+        #pol = ROOT.RooPolynomial(pdfName, "polynomial", w.var(vari), ROOT.RooArgList(a, b))
+        pol = ROOT.RooGenericPdf(pdfName, "polynomial", "%s*(lepsDPhi_Edge)*(lepsDPhi_Edge) + %s"%("ldp_a0_%s"%(nameSuffix), "ldp_a2_%s"%(nameSuffix)), ROOT.RooArgList(w.var(vari), a, b))
         allObj.extend([a,b, pol]) # save from python garbage collection
         fitFunc = pol
         
     elif vari == "sum_mlb_Edge":
-        a = ROOT.RooRealVar("cbpar1%s"%(nameSuffix), "a", 170, 0, 300)
-        b = ROOT.RooRealVar("cbpar2%s"%(nameSuffix), "b", 50, 0, 200)
-        c = ROOT.RooRealVar("cbpar3%s"%(nameSuffix), "c", -1, -5, 5)
-        d = ROOT.RooRealVar("cbpar4%s"%(nameSuffix), "d", 10,0, 20)
+        a = ROOT.RooRealVar("mlb_peak_%s"%(nameSuffix) , "peak",  170, 120, 220)
+        b = ROOT.RooRealVar("mlb_sigma_%s"%(nameSuffix), "sigma", 50, 1, 100)
+        c = ROOT.RooRealVar("mlb_alpha_%s"%(nameSuffix), "alpha", -1, -2.5, -0.5)
+        d = ROOT.RooRealVar("mlb_n_%s"%(nameSuffix)    , "n",     1,0, 2)
         cb = ROOT.RooCBShape(pdfName, "crystalball", w.var(vari), a,b,c,d)
         allObj.extend([a,b,c,d,cb]) # save from python garbage collection
         fitFunc = cb
         
     elif vari == "lepsZPt_Edge":
-        a = ROOT.RooRealVar("cb2par1%s"%(nameSuffix), "a", 40, 0, 100)
-        b = ROOT.RooRealVar("cb2par2%s"%(nameSuffix), "b", 100, 0, 100)
-        c = ROOT.RooRealVar("cb2par3%s"%(nameSuffix), "c", -1, -5, 5)
-        d = ROOT.RooRealVar("cb2par4%s"%(nameSuffix), "d", 15,0, 20)
+        a = ROOT.RooRealVar("zpt_peak_%s"%(nameSuffix) , "peak", 40, 30, 100)
+        b = ROOT.RooRealVar("zpt_sigma_%s"%(nameSuffix), "sigma", 40, 5, 80)
+        c = ROOT.RooRealVar("zpt_alpha_%s"%(nameSuffix), "alpha", -1, -2.5, 0)
+        d = ROOT.RooRealVar("zpt_n_%s"%(nameSuffix)    , "n", 22,5, 100)
+        
         cb = ROOT.RooCBShape(pdfName, "crystalball", w.var(vari), a,b,c,d)
+        
         allObj.extend([a,b,c,d,cb]) # save from python garbage collection
+        
         fitFunc = cb
         
     else:
@@ -139,23 +141,23 @@ def fitVariables(useExistingDataSet, runRange, region, puReweighting, verbose):
         (ttOF, ttEE, ttMM) = getMCTrees(theConfig)
         dataOFraw = getTreeFromDataset(theConfig.dataSetPath, theConfig.flag, theConfig.task, theConfig.dataset, theConfig.runRange, "/EMuDileptonTree", cut=theConfig.selection.cut)
         dataOF = convertDileptonTree(dataOFraw)
-
+        dataOFraw = None
         #Initialize RooVars and prepare trees as datasets
         weight = ROOT.RooRealVar("weight","weight",1.,-100.,10.)
-        ptll = ROOT.RooRealVar("lepsZPt_Edge","ptll",1,0,300)
-        met  = ROOT.RooRealVar("met_Edge", "met", 151, 150, 500)
-        deltaPhi = ROOT.RooRealVar("lepsDPhi_Edge", "deltaPhi", 1, 0, 3.1416)
-        sumMlb = ROOT.RooRealVar("sum_mlb_Edge", "sumMlb", 1, 0, 10000)
+        ptll = ROOT.RooRealVar("lepsZPt_Edge","ptll",1,0,1000)
+        met  = ROOT.RooRealVar("met_Edge", "met", 151, 150, 1000)
+        deltaPhi = ROOT.RooRealVar("lepsDPhi_Edge", "deltaPhi", 1, 0, 3.14)
+        sumMlb = ROOT.RooRealVar("sum_mlb_Edge", "sumMlb", 1, 0, 3000)
         
         print "Preparing trees as RooDataSets"
         datasets = prepareDatasets(sumMlb, met, ptll, deltaPhi, weight, dataOF, ttOF, ttEE, ttMM, theConfig)
         
         #Create workspace and import datasets and variables
         w = ROOT.RooWorkspace("work", ROOT.kTRUE)
-        w.factory("lepsZPt_Edge[150,0,300]")
-        w.factory("met_Edge[325,150,500]")
-        w.factory("lepsDPhi_Edge[1,0,3.1416]")
-        w.factory("sum_mlb_Edge[1,0,1000]")
+        w.factory("lepsZPt_Edge[150,0,1000]")
+        w.factory("met_Edge[325,150,1000]")
+        w.factory("lepsDPhi_Edge[1,0,3.14]")
+        w.factory("sum_mlb_Edge[1,0,3000]")
         w.factory("weight[1,-100,10.]")
         
         print "Importing datasets into workspace"
@@ -175,15 +177,19 @@ def fitVariables(useExistingDataSet, runRange, region, puReweighting, verbose):
     ttof = float(w.data("ttbarOF").sumEntries())
     ttsf = float(w.data("ttbarSF").sumEntries())   
     
-    tasks = [("lepsZPt_Edge", ";p_{T}^{ll} [GeV]; Events / (6 GeV)", (50, 0, 300)), 
-             ("sum_mlb_Edge", ";#Sigma m_{lb} [GeV]; Events / (10 GeV)", (100, 0, 1000)),
-             ("met_Edge", ";met [GeV]; Events / (3.5 GeV)", (100, 150, 500)), 
-             ("lepsDPhi_Edge", ";|#Delta#phi_{ll}|; Events / (0.0314)", (100,0,3.1416))]
+    fits =  [
+            ("lepsZPt_Edge", ";p_{T}^{ll} [GeV]; Events / (6 GeV)", (50, 0, 300)), 
+            ("sum_mlb_Edge", ";#Sigma m_{lb} [GeV]; Events / (10 GeV)", (100, 0, 1000)),
+            ("met_Edge", ";met [GeV]; Events / (3.5 GeV)", (100, 150, 500)), 
+            ("lepsDPhi_Edge", ";|#Delta#phi_{ll}|; Events / (0.0314)", (100,0,3.14))
+            ]
     
     ws = ROOT.RooWorkspace("w", ROOT.kTRUE)
     
     print "Starting fits"
-    for vari, title, binning in tasks:
+    
+
+    for vari, title, binning in fits:
         dataFit = getFitPDF(w, vari, "OF", False)
         mcFitOF = getFitPDF(w, vari, "OF", True )
         mcFitSF = getFitPDF(w, vari, "SF", True )
@@ -192,18 +198,18 @@ def fitVariables(useExistingDataSet, runRange, region, puReweighting, verbose):
         template.plotData = True
         template.lumiInt = theConfig.runRange.printval
         
-        frame = w.var(vari).frame(RooFit.Title(title))
+        frame = w.var(vari).frame(RooFit.Title(title), RooFit.Range(binning[1], binning[2]))
         yMax = ROOT.RooAbsData.plotOn(w.data("dataOF"),  frame, RooFit.Name("dataOF_P"), RooFit.Binning(*binning), RooFit.LineColor(ROOT.kBlack), RooFit.MarkerColor(ROOT.kBlack), RooFit.XErrorSize(0), RooFit.MarkerStyle(8), RooFit.MarkerSize(0.8)).GetMaximum()
-        dataFit.fitTo(w.data("dataOF"))
+        dataFit.fitTo(w.data("dataOF"), RooFit.Range(binning[1], binning[2]))
         dataFit.plotOn(frame, RooFit.LineColor(ROOT.kBlack), RooFit.Name("dataOF_L"))
         
-        ROOT.RooAbsData.plotOn(w.data("ttbarOF"), frame, RooFit.Name("ttbarOF_P"), RooFit.Binning(*binning), RooFit.LineColor(ROOT.kBlue)  , RooFit.MarkerColor(ROOT.kBlue) , RooFit.XErrorSize(0), RooFit.MarkerStyle(8), RooFit.MarkerSize(0.8), RooFit.Rescale(norm/ttof))
-        mcFitOF.fitTo(w.data("ttbarOF"), RooFit.SumW2Error(ROOT.kTRUE))
-        mcFitOF.plotOn(frame, RooFit.Name("ttbarOF_L"), RooFit.LineColor(ROOT.kBlue), RooFit.Normalization(norm/ttof))
+        ROOT.RooAbsData.plotOn(w.data("ttbarOF"), frame, RooFit.Name("ttbarOF_P"), RooFit.Binning(*binning), RooFit.LineColor(ROOT.kRed)  , RooFit.MarkerColor(ROOT.kRed) , RooFit.XErrorSize(0), RooFit.MarkerStyle(8), RooFit.MarkerSize(0.8), RooFit.Rescale(norm/ttof))
+        mcFitOF.fitTo(w.data("ttbarOF"), RooFit.Range(binning[1], binning[2]), RooFit.SumW2Error(ROOT.kTRUE))
+        mcFitOF.plotOn(frame, RooFit.Name("ttbarOF_L"), RooFit.LineColor(ROOT.kRed))
         
-        ROOT.RooAbsData.plotOn(w.data("ttbarSF"), frame, RooFit.Name("ttbarSF_P"), RooFit.Binning(*binning), RooFit.LineColor(ROOT.kRed)   , RooFit.MarkerColor(ROOT.kRed)  , RooFit.XErrorSize(0), RooFit.MarkerStyle(8), RooFit.MarkerSize(0.8), RooFit.Rescale(norm/ttsf))
-        mcFitSF.fitTo(w.data("ttbarSF"), RooFit.SumW2Error(ROOT.kTRUE))
-        mcFitSF.plotOn(frame, RooFit.Name("ttbarSF_L"), RooFit.LineColor(ROOT.kRed), RooFit.Normalization(norm/ttsf))
+        ROOT.RooAbsData.plotOn(w.data("ttbarSF"), frame, RooFit.Name("ttbarSF_P"), RooFit.Binning(*binning), RooFit.LineColor(ROOT.kBlue)   , RooFit.MarkerColor(ROOT.kBlue)  , RooFit.XErrorSize(0), RooFit.MarkerStyle(8), RooFit.MarkerSize(0.8), RooFit.Rescale(norm/ttsf))
+        mcFitSF.fitTo(w.data("ttbarSF"), RooFit.Range(binning[1], binning[2]), RooFit.SumW2Error(ROOT.kTRUE))
+        mcFitSF.plotOn(frame, RooFit.Name("ttbarSF_L"), RooFit.LineColor(ROOT.kBlue))
         frame.SetMinimum(0)
         frame.SetMaximum(yMax*1.3)
         template.drawCanvas()
@@ -248,7 +254,7 @@ def main():
     
     parser.add_argument("-s", "--selection", dest = "selection" , action="store", default="SignalInclusive",
                           help="selection which to apply.")
-    parser.add_argument("-r", "--runRange", dest="runRange", action="store", default="Run2016_12_9fb",
+    parser.add_argument("-r", "--runRange", dest="runRange", action="store", default="Run2016_36fb",
                           help="name of run range.")
     parser.add_argument("-u", "--use", action="store_true", dest="useExisting", default=False,
                           help="use existing datasets from workspace, default is false.")

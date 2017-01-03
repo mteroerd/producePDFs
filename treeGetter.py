@@ -66,9 +66,11 @@ def getMCTrees(theConfig):
             
             # convert trees
             treesMCOF.Add(convertDileptonTree(treeMCOFraw, weight=dynScale))
+            treeMCOFraw = None
             treesMCEE.Add(convertDileptonTree(treeMCEEraw, weight=dynScale))
+            treeMCEEraw = None
             treesMCMM.Add(convertDileptonTree(treeMCMMraw, weight=dynScale))
-                    
+            treeMCMMraw = None
                     
     treeMCOFtotal = ROOT.TTree.MergeTrees(treesMCOF)
     treeMCEEtotal = ROOT.TTree.MergeTrees(treesMCEE)
@@ -121,6 +123,8 @@ def getTreeFromDataset(dataSetPath, flag, task, dataset, runRange, treePath, cut
         log.logError("Adding trees for multiple jobs without scaling!")
     
     cut += runRange.runCut
+    if runRange.label != "Run2016_12_9fb":
+        cut += " && (acos((vMet.Px()*jet1.Px()+vMet.Py()*jet1.Py())/vMet.Pt()/jet1.Pt()) > 0.4) && (acos((vMet.Px()*jet2.Px()+vMet.Py()*jet2.Py())/vMet.Pt()/jet2.Pt()) > 0.4)"
     
     tree = ROOT.TChain("%s%s" % (task, treePath))
     for job in jobList:
@@ -152,7 +156,9 @@ def getTreeFromJob(dataSetPath, flag, task, job, runRange, treePath, cut=""):
         log.logWarning("File not found: %s" % fileName)
     
     cut += runRange.runCut
-    
+    if runRange.label != "Run2016_12_9fb":
+        cut += " && (acos((vMet.Px()*jet1.Px()+vMet.Py()*jet1.Py())/vMet.Pt()/jet1.Pt()) > 0.4) && (acos((vMet.Px()*jet2.Px()+vMet.Py()*jet2.Py())/vMet.Pt()/jet2.Pt()) > 0.4)"
+        
     if (cut != ""):
         log.logDebug("Cutting tree down to: %s" % cut)
         tree = tree.CopyTree(cut)
@@ -161,7 +167,7 @@ def getTreeFromJob(dataSetPath, flag, task, job, runRange, treePath, cut=""):
     if (tree != None):
         tree.SetDirectory(0)
     else:
-        log.logError("Tree invalid: %s -%s - %s - %s" % (flag, task, dataset, treePath))
+        log.logError("Tree invalid: %s -%s - %s - %s" % (flag, task, job, treePath))
     
 
     return tree
