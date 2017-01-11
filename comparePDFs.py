@@ -236,11 +236,11 @@ def main():
         
         
         #compareParameters(pdfSpace, pdfSpace2)
-        #printMaxVals(dataSpace, "dataOF")
-        #printMaxVals(pdfSpace2, "em_data_cuts_of_sr_met150_of")
+        printMaxVals(dataSpace, "dataOF")
+        printMaxVals(pdfSpace2, "em_data_cuts_of_sr_met150_of")
         #return
         
-        for isMC in [0,1,2]:
+        for isMC in [0,]:
                 comparePDFs(dataSpace, pdfSpace, pdfSpace2, isMC)
         
             

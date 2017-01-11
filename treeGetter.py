@@ -157,7 +157,7 @@ def getTreeFromJob(dataSetPath, flag, task, job, runRange, treePath, cut=""):
     
     cut += runRange.runCut
     if runRange.label != "Run2016_12_9fb":
-        cut += " && (acos((vMet.Px()*jet1.Px()+vMet.Py()*jet1.Py())/vMet.Pt()/jet1.Pt()) > 0.4) && (acos((vMet.Px()*jet2.Px()+vMet.Py()*jet2.Py())/vMet.Pt()/jet2.Pt()) > 0.4)"
+        cut += " && ( acos((vMet.Px()*jet1.Px()+vMet.Py()*jet1.Py())/vMet.Pt()/jet1.Pt()) > 0.4 ) && ( acos((vMet.Px()*jet2.Px()+vMet.Py()*jet2.Py())/vMet.Pt()/jet2.Pt()) > 0.4 )"
         
     if (cut != ""):
         log.logDebug("Cutting tree down to: %s" % cut)

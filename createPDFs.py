@@ -178,10 +178,10 @@ def fitVariables(useExistingDataSet, runRange, region, puReweighting, verbose):
     ttsf = float(w.data("ttbarSF").sumEntries())   
     
     fits =  [
-            ("lepsZPt_Edge", ";p_{T}^{ll} [GeV]; Events / (6 GeV)", (50, 0, 300)), 
+            ("lepsZPt_Edge", ";p_{T}^{ll} [GeV]; Events / (6 GeV)",     (50, 0, 300)), 
             ("sum_mlb_Edge", ";#Sigma m_{lb} [GeV]; Events / (10 GeV)", (100, 0, 1000)),
-            ("met_Edge", ";met [GeV]; Events / (3.5 GeV)", (100, 150, 500)), 
-            ("lepsDPhi_Edge", ";|#Delta#phi_{ll}|; Events / (0.0314)", (100,0,3.14))
+            ("met_Edge",     ";met [GeV]; Events / (3.5 GeV)",          (100, 150, 500)), 
+            ("lepsDPhi_Edge",";|#Delta#phi_{ll}|; Events / (0.0314)",   (100,0,3.14))
             ]
     
     ws = ROOT.RooWorkspace("w", ROOT.kTRUE)
@@ -236,7 +236,7 @@ def fitVariables(useExistingDataSet, runRange, region, puReweighting, verbose):
         template.saveAs(vari+"_fit_"+theConfig.runRange.label)
     
         getattr(ws,"import")(dataFit)
-        getattr(ws,"import")(mcFitOF)
+        getattr(ws,"import")(mcFitOF) 
         getattr(ws,"import")(mcFitSF)
 
     print "Fits are done"
