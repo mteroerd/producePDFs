@@ -36,6 +36,16 @@ from helpers import *
 #       Add a pair of histograms to be drawn in the ratioGraph. Will 
 #       also be used for efficiency plots.
 #
+# * addResiduePlot(h1, h2, color=ROOT.kBlack, markerStyle=20, markerSize=1, fillColor=ROOT.kWhite, errList=None, options="")
+#       Add a residue plot to be drawn with h1 and h2. h1 can be TH1 or 
+#       TGraphErrors, while h2 can also be TF1. errList can be used to 
+#       apply custom errors, each entry in the list being the error to be 
+#       used. 
+#       options:    "-" to multiply residues by -1.
+#                   "P" to create a pull plot (divide by uncertainties)
+#                   "H" to draw as a histogram (without errors). fillColor 
+#                       is used as the histogram bar color
+#
 # * clearRatioPairs()
 #       Empty list of ratioPairs
 #
@@ -87,8 +97,9 @@ from helpers import *
 #       Pad outer margins
 # -personalWork, preliminary, forTWIKI, plotData(bools): 
 #       For text below CMS logo. Default: True, False, False, False
-# -hasRatio, hasEfficiency, hasBottomWindow(bools): 
-#       Draw ratio/efficiency graph, if both are true, only ratio graph is drawn. hasBottomWindow only creates lower pad. Default: False
+# -hasRatio, hasEfficiency, hasBottomWindow, hasRatio(bools): 
+#       Draw ratio/efficiency/residue graph, if all are true, only ratio graph is drawn. hasBottomWindow only creates lower pad. 
+#       Default: False
 # -hasLegend (bool):
 #       Automatically draw legend of all added plots that have specified labels
 # -ratioLabel, efficiencyLabel(strings): 
@@ -121,6 +132,29 @@ from helpers import *
 #       Text to describe cuts; if not set, the label will not be drawn
 #  -lumiInt, lumiSqrtS (floats):
 #       Integrated luminosity [fb^-1] and sqrt(s) [TeV]; if lumiInt is not set, no luminosity will be printed
+#  ---
+# Following members are for specifications about the residual plot
+#  -residueLabel (string):
+#       Y-axis title of residue graph
+#  -residueRangeUp (float):
+#       Upper bound for residue plot if set manually
+#  -residueRangeLow (float):
+#       Lower bound for residue plot if set manually. Default "None", so
+#       -residueRangeUp will be used
+#  -residueRangeMode (string):
+#       "MANUAL", "AUTO" or "AUTOASYMM". If AUTO is used, the maximum 
+#       values of residuals will be used (scaled by residueRangeScale [float])
+#       "AUTOASYMM" allows for residue plot not centered around 0 if the 
+#       distribution is asymmetric around 0. Default: "AUTO"
+#  -residueZeroLineDo (bool):
+#       draw line through 0. Default: True
+#  -residueZeroLineWidth (float):
+#       width of zero line. Default: 2.0
+#  -residueZeroLineStyle (float):
+#       line style of zero line. Default: 2.0
+#  -residueZeroLineColor (int):
+#       color of zero line. Default: ROOT.kBlack
+
 
 def countNumbersUp():
     countNumbersUp.counter += 1
@@ -232,6 +266,20 @@ class plotTemplate:
     efficiencyOption = "cp"
     hasRatio = False
     hasBottomWindow = False
+    hasResidue = False
+    
+    residuePlots = []
+    residueGraphs = []
+    residueLabel = ""
+    residueRangeUp =  3
+    residueRangeLow = None
+    residueRangeMode = "AUTO" # MANUAL, AUTO, AUTOASYMM
+    residueRangeScale = 1.1 
+    residueZeroLineDo = True
+    residueZeroLine = None
+    residueZeroLineWidth = 2
+    residueZeroLineStyle = 2
+    residueZeroLineColor = ROOT.kBlack
     
     forTWIKI = False
     preliminary = False
@@ -287,19 +335,7 @@ class plotTemplate:
     def addSecondaryPlot(self,hist, drawOption="", label = None):
         self.secondaryPlots.append((hist, drawOption, label))
         
-    residuePlots = []
-    residueGraphs = []
-    residueLabel = ""
-    residueRangeUp =  3
-    residueRangeLow = None
-    residueRangeMode = "MANUAL" # AUTO,
-    residueRangeScale = 1.1 
-    residueZeroLineDo = True
-    residueZeroLine = None
-    residueZeroLineWidth = 2
-    residueZeroLineStyle = 2
-    residueZeroLineColor = ROOT.kBlack
-    hasResidue = False
+    
     def addResiduePlot(self, h1, h2, color=ROOT.kBlack, markerStyle=20, markerSize=1, fillColor=ROOT.kWhite, errList=None, options=""):
         self.residuePlots.append((h1, h2, color, markerStyle, markerSize, fillColor, errList, options))
       
