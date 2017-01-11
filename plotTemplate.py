@@ -36,12 +36,13 @@ from helpers import *
 #       Add a pair of histograms to be drawn in the ratioGraph. Will 
 #       also be used for efficiency plots.
 #
-# * addResiduePlot(h1, h2, color=ROOT.kBlack, markerStyle=20, markerSize=1, fillColor=ROOT.kWhite, errList=None, options="")
-#       Add a residue plot to be drawn with h1 and h2. h1 can be TH1 or 
+# * addResidualPlot(h1, h2, range=None, color=ROOT.kBlack, markerStyle=20, markerSize=1, fillColor=ROOT.kWhite, errList=None, options="")
+#       Add a residual plot to be drawn with h1 and h2. h1 can be TH1 or 
 #       TGraphErrors, while h2 can also be TF1. errList can be used to 
 #       apply custom errors, each entry in the list being the error to be 
-#       used. 
-#       options:    "-" to multiply residues by -1.
+#       used. A range can be defined in the format (min, max), where min 
+#       max are included.
+#       options:    "-" to multiply residuals by -1.
 #                   "P" to create a pull plot (divide by uncertainties)
 #                   "H" to draw as a histogram (without errors). fillColor 
 #                       is used as the histogram bar color
@@ -98,7 +99,7 @@ from helpers import *
 # -personalWork, preliminary, forTWIKI, plotData(bools): 
 #       For text below CMS logo. Default: True, False, False, False
 # -hasRatio, hasEfficiency, hasBottomWindow, hasRatio(bools): 
-#       Draw ratio/efficiency/residue graph, if all are true, only ratio graph is drawn. hasBottomWindow only creates lower pad. 
+#       Draw ratio/efficiency/residual graph, if all are true, only ratio graph is drawn. hasBottomWindow only creates lower pad. 
 #       Default: False
 # -hasLegend (bool):
 #       Automatically draw legend of all added plots that have specified labels
@@ -134,25 +135,25 @@ from helpers import *
 #       Integrated luminosity [fb^-1] and sqrt(s) [TeV]; if lumiInt is not set, no luminosity will be printed
 #  ---
 # Following members are for specifications about the residual plot
-#  -residueLabel (string):
-#       Y-axis title of residue graph
-#  -residueRangeUp (float):
-#       Upper bound for residue plot if set manually
-#  -residueRangeLow (float):
-#       Lower bound for residue plot if set manually. Default "None", so
-#       -residueRangeUp will be used
-#  -residueRangeMode (string):
+#  -residualLabel (string):
+#       Y-axis title of residual graph
+#  -residualRangeUp (float):
+#       Upper bound for residual plot if set manually
+#  -residualRangeLow (float):
+#       Lower bound for residual plot if set manually. Default "None", so
+#       -residualRangeUp will be used
+#  -residualRangeMode (string):
 #       "MANUAL", "AUTO" or "AUTOASYMM". If AUTO is used, the maximum 
-#       values of residuals will be used (scaled by residueRangeScale [float])
-#       "AUTOASYMM" allows for residue plot not centered around 0 if the 
+#       values of residuals will be used (scaled by residualRangeScale [float])
+#       "AUTOASYMM" allows for residual plot not centered around 0 if the 
 #       distribution is asymmetric around 0. Default: "AUTO"
-#  -residueZeroLineDo (bool):
+#  -residualZeroLineDo (bool):
 #       draw line through 0. Default: True
-#  -residueZeroLineWidth (float):
+#  -residualZeroLineWidth (float):
 #       width of zero line. Default: 2.0
-#  -residueZeroLineStyle (float):
+#  -residualZeroLineStyle (float):
 #       line style of zero line. Default: 2.0
-#  -residueZeroLineColor (int):
+#  -residualZeroLineColor (int):
 #       color of zero line. Default: ROOT.kBlack
 
 
@@ -266,20 +267,20 @@ class plotTemplate:
     efficiencyOption = "cp"
     hasRatio = False
     hasBottomWindow = False
-    hasResidue = False
+    hasResidual = False
     
-    residuePlots = []
-    residueGraphs = []
-    residueLabel = ""
-    residueRangeUp =  3
-    residueRangeLow = None
-    residueRangeMode = "AUTO" # MANUAL, AUTO, AUTOASYMM
-    residueRangeScale = 1.1 
-    residueZeroLineDo = True
-    residueZeroLine = None
-    residueZeroLineWidth = 2
-    residueZeroLineStyle = 2
-    residueZeroLineColor = ROOT.kBlack
+    residualPlots = []
+    residualGraphs = []
+    residualLabel = ""
+    residualRangeUp =  3
+    residualRangeLow = None
+    residualRangeMode = "AUTO" # MANUAL, AUTO, AUTOASYMM
+    residualRangeScale = 1.1 
+    residualZeroLineDo = True
+    residualZeroLine = None
+    residualZeroLineWidth = 2
+    residualZeroLineStyle = 2
+    residualZeroLineColor = ROOT.kBlack
     
     forTWIKI = False
     preliminary = False
@@ -336,27 +337,27 @@ class plotTemplate:
         self.secondaryPlots.append((hist, drawOption, label))
         
     
-    def addResiduePlot(self, h1, h2, color=ROOT.kBlack, markerStyle=20, markerSize=1, fillColor=ROOT.kWhite, errList=None, options=""):
-        self.residuePlots.append((h1, h2, color, markerStyle, markerSize, fillColor, errList, options))
+    def addResidualPlot(self, h1, h2, resRange=None, color=ROOT.kBlack, markerStyle=20, markerSize=1, fillColor=ROOT.kWhite, errList=None, options=""):
+        self.residualPlots.append((h1, h2, resRange, color, markerStyle, markerSize, fillColor, errList, options))
       
     def clearSecondaryPlots(self):
         self.secondaryPlots = []
     
     def drawCanvas(self):
         self.canvas = ROOT.TCanvas("hCanvas%d"%(countNumbersUp()), "", 800,800)
-        if self.hasRatio or self.hasEfficiency or self.hasResidue or self.hasBottomWindow:
+        if self.hasRatio or self.hasEfficiency or self.hasResidual or self.hasBottomWindow:
             self.plotPad = ROOT.TPad("plotPad","plotPad",0,self.ratioPadHeight,1,1)
         else:
             self.plotPad = ROOT.TPad("plotPad","plotPad",0,0,1,1)
         self.plotPad.UseCurrentStyle()
         self.plotPad.Draw()  
         
-        if self.hasRatio or self.hasEfficiency or self.hasResidue or self.hasBottomWindow:
+        if self.hasRatio or self.hasEfficiency or self.hasResidual or self.hasBottomWindow:
             self.ratioPad = ROOT.TPad("ratioPad","ratioPad",0,0,1,self.ratioPadHeight)
             self.ratioPad.UseCurrentStyle()
             self.ratioPad.Draw()
          
-        if self.hasRatio or self.hasEfficiency or self.hasResidue or self.hasBottomWindow:
+        if self.hasRatio or self.hasEfficiency or self.hasResidual or self.hasBottomWindow:
             self.plotPad.SetTopMargin    (self.marginTop)
             self.plotPad.SetLeftMargin   (self.marginLeft)
             self.plotPad.SetRightMargin  (self.marginRight)
@@ -373,7 +374,7 @@ class plotTemplate:
         
         if self.logX:
             self.plotPad.SetLogx()
-            if self.hasRatio or self.hasEfficiency or self.hasResidue or self.hasBottomWindow:
+            if self.hasRatio or self.hasEfficiency or self.hasResidual or self.hasBottomWindow:
                 self.ratioPad.SetLogx()
         if self.logY:
             self.plotPad.SetLogy()
@@ -490,9 +491,9 @@ class plotTemplate:
         self.legend         = None
         self.secondaryPlots = []
         self.ratioGraphs    = []
-        self.residueGraphs  = []
-        self.residuePlots   = []
-        self.residueZeroLine= None
+        self.residualGraphs  = []
+        self.residualPlots   = []
+        self.residualZeroLine= None
         self.ratioPairs     = []
         self.pathName       = "fig/"
         self.folderName     = ""
@@ -502,7 +503,7 @@ class plotTemplate:
         self.hAxis          = None
     
     def drawRatioPlots(self):
-        if self.hasRatio or self.hasEfficiency or self.hasResidue:
+        if self.hasRatio or self.hasEfficiency or self.hasResidual:
             self.ratioPad.cd()
             if self.hasRatio:
                 self.ratioGraphs = []
@@ -540,9 +541,9 @@ class plotTemplate:
                     self.ratioGraphs.append(tmp)
                     self.ratioGraphs[len(self.ratioGraphs)-1].Draw("same P")
                     
-            elif self.hasResidue:
-                low = self.residueRangeLow if (self.residueRangeLow != None) else -self.residueRangeUp
-                up  = self.residueRangeUp
+            elif self.hasResidual:
+                low = self.residualRangeLow if (self.residualRangeLow != None) else -self.residualRangeUp
+                up  = self.residualRangeUp
                 
                 minRes =  100000000000.0
                 maxRes = -100000000000.0
@@ -555,19 +556,19 @@ class plotTemplate:
                 self.hAxis.GetXaxis().SetLabelSize(0.0)
                 self.hAxis.GetYaxis().SetLabelSize(0.15)
                 self.hAxis.GetXaxis().SetNdivisions(self.primaryPlot[0].GetXaxis().GetNdivisions())
-                self.hAxis.GetYaxis().SetTitle(self.residueLabel)
+                self.hAxis.GetYaxis().SetTitle(self.residualLabel)
                 self.hAxis.Draw("AXIS")
                 
-                if self.residueZeroLineDo:
-                    self.residueZeroLine = ROOT.TLine(self.plotPad.GetUxmin(),0,self.plotPad.GetUxmax(),0)
-                    self.residueZeroLine.SetLineColor(self.residueZeroLineColor)
-                    self.residueZeroLine.SetLineWidth(self.residueZeroLineWidth)
-                    self.residueZeroLine.SetLineStyle(self.residueZeroLineStyle)
-                    self.residueZeroLine.Draw("same")
+                if self.residualZeroLineDo:
+                    self.residualZeroLine = ROOT.TLine(self.plotPad.GetUxmin(),0,self.plotPad.GetUxmax(),0)
+                    self.residualZeroLine.SetLineColor(self.residualZeroLineColor)
+                    self.residualZeroLine.SetLineWidth(self.residualZeroLineWidth)
+                    self.residualZeroLine.SetLineStyle(self.residualZeroLineStyle)
+                    self.residualZeroLine.Draw("same")
                 
-                self.residueGraphs = []
+                self.residualGraphs = []
                 
-                for h1, h2, color, markerstyle, markersize, fillcolor, errList, options in self.residuePlots:
+                for h1, h2, resRange, color, markerstyle, markersize, fillcolor, errList, options in self.residualPlots:
                     
                     tmp = ROOT.TGraphAsymmErrors()
                     tmp.SetMarkerColor(color)
@@ -575,14 +576,21 @@ class plotTemplate:
                     tmp.SetLineColor(color)
                     tmp.SetFillColor(fillcolor)
                     tmp.SetMarkerStyle(markerstyle)
-                    self.residueGraphs.append(tmp)
+                    self.residualGraphs.append(tmp)
                     if h1.InheritsFrom(ROOT.TH1.Class()):
                         slope = 0
                         for i in range(1, h1.GetNbinsX()+1):
                             
                             xPos = h1.GetBinCenter(i)
+                            if resRange != None:
+                                if xPos > resRange[1] or xPos < resRange[0]:
+                                    tmp.SetPoint(i, xPos, 0)
+                                    tmp.SetPointError(i, 0, 0, 0, 0)
+                                    continue
+                            
                             minuent = h1.GetBinContent(i)
                             minuent_err = (h1.GetBinErrorLow(i), h1.GetBinErrorUp(i))
+                            
                             
                             
                             if h2.InheritsFrom(ROOT.TH1.Class()):
@@ -593,43 +601,51 @@ class plotTemplate:
                                 slope = h2.Derivative(xPos)
                                 subtrahent_err = (0,0)
                             else: 
-                                print "Error in drawResidues: Invalid type of subtrahent", h1
+                                print "Error in drawResiduals: Invalid type of subtrahent", h1
                                 exit()
                             
-                            residue = minuent - subtrahent
-                            if residue >= 0:
+                            residual = minuent - subtrahent
+                            if residual >= 0:
                                 i_m = 0
                                 i_s = 1
                             else:
                                 i_m = 1
                                 i_s = 0
                                 
-                            residue_err = (minuent_err[i_m]**2 + subtrahent_err[i_s]**2)**0.5
+                            residual_err = (minuent_err[i_m]**2 + subtrahent_err[i_s]**2)**0.5
                             if errList != None:
-                                residue_err = errList[i-1]
+                                residual_err = errList[i-1]
                             
                             if "P" in options:
-                                if residue_err > 0:
-                                    residue /= residue_err
-                                    residue_err = 1
+                                if residual_err > 0:
+                                    residual /= residual_err
+                                    residual_err = 1
                                 else:
-                                    residue = 0
-                                    residue_err = 0
+                                    residual = 0
+                                    residual_err = 0
                                 
                             if "-" in options:
-                                residue = -residue
+                                residual = -residual
                             
-                            if residue < minRes:
-                                minRes = residue
-                            if residue > maxRes:
-                                maxRes = residue
+                            if residual < minRes:
+                                minRes = residual
+                            if residual > maxRes:
+                                maxRes = residual
+                                
                             
-                            tmp.SetPoint(i, xPos, residue)
-                            tmp.SetPointError(i, 0, 0, residue_err, residue_err)
+                            tmp.SetPoint(i, xPos, residual)
+                            tmp.SetPointError(i, 0, 0, residual_err, residual_err)
                                 
                     elif h1.InheritsFrom(ROOT.TGraphErrors.Class()):
                         for i in range(h1.GetN()):
                             xPos = h1.GetX()[i]
+                            if resRange != None:
+                                if xPos > resRange[1] or xPos < resRange[0]:
+                                    tmp.SetPoint(i, xPos, 0)
+                                    tmp.SetPointError(i, 0, 0, 0, 0)
+                                    continue
+
+                            
                             minuent = h1.GetY()[i]
                             if h1.InheritsFrom(ROOT.TGraphAsymmErrors.Class()):
                                     minuent_err = (h1.GetEYlow()[i], h1.GetEYhigh()[i])
@@ -649,39 +665,39 @@ class plotTemplate:
                                 subtrahent = h2.Eval(xPos)
                                 subtrahent_err = (0,0)
                                 
-                            residue = minuent - subtrahent
-                            if residue >= 0:
+                            residual = minuent - subtrahent
+                            if residual >= 0:
                                 i_m = 0
                                 i_s = 1
                             else:
                                 i_m = 1
                                 i_s = 0
                                 
-                            residue_err = (minuent_err[i_m]**2 + subtrahent_err[i_s]**2 )**0.5
+                            residual_err = (minuent_err[i_m]**2 + subtrahent_err[i_s]**2 )**0.5
                             if errList != None:
-                                residue_err = errList[i]
+                                residual_err = errList[i]
                             
                             if "P" in options:
-                                if residue_err > 0:
-                                    residue /= residue_err
-                                    residue_err = 1
+                                if residual_err > 0:
+                                    residual /= residual_err
+                                    residual_err = 1
                                 else:
-                                    residue = 0
-                                    residue_err = 0
+                                    residual = 0
+                                    residual_err = 0
                             if "-" in options:
-                                residue = -residue
+                                residual = -residual
                             
-                            if residue < minRes:
-                                minRes = residue
-                            if residue > maxRes:
-                                maxRes = residue
+                            if residual < minRes:
+                                minRes = residual
+                            if residual > maxRes:
+                                maxRes = residual
                             
-                            tmp.SetPoint(i, xPos, residue)
-                            tmp.SetPointError(i, 0, 0, residue_err, residue_err)
+                            tmp.SetPoint(i, xPos, residual)
+                            tmp.SetPointError(i, 0, 0, residual_err, residual_err)
                     
                     
                     else:
-                        print "Error in drawResidues: Invalid type of minuent ", h2
+                        print "Error in drawResiduals: Invalid type of minuent ", h2
                         exit()
                 
                     if "H" in options:
@@ -689,14 +705,14 @@ class plotTemplate:
                     else:
                         tmp.Draw("same P")
                 
-                if self.residueRangeMode.upper() == "AUTO":
+                if self.residualRangeMode.upper() == "AUTO":
                     boundaries = max(abs(minRes), maxRes)
-                    boundLow = -boundaries * self.residueRangeScale
-                    boundUp = boundaries * self.residueRangeScale      
+                    boundLow = -boundaries * self.residualRangeScale
+                    boundUp = boundaries * self.residualRangeScale      
                     self.hAxis.GetYaxis().SetLimits(boundLow, boundUp)              
-                elif self.residueRangeMode.upper() == "AUTOASYMM":
-                    boundLow = minRes * self.residueRangeScale
-                    boundUp = maxRes * self.residueRangeScale
+                elif self.residualRangeMode.upper() == "AUTOASYMM":
+                    boundLow = minRes * self.residualRangeScale
+                    boundUp = maxRes * self.residualRangeScale
                     self.hAxis.GetYaxis().SetLimits(boundLow, boundUp)              
                 
     
