@@ -79,7 +79,7 @@ from helpers import *
 # -maximumScale(float):
 #       Maximum of plot scaled by maximum value of primary plot
 # -minimum, maximum(floats):
-#       Overwrites maximum scale, set minimum and maximum y-value 
+#       Overwrites maximum scale, set minimum and maximum y-value (z-value for 2D)
 #       (z-value for 2D plots) of primary plot
 # -labelX,labelY,labelZ(strings): 
 #       Set axis title of primary plot, None (default) will not change titles of primary plot
@@ -125,7 +125,7 @@ from helpers import *
 def countNumbersUp():
     countNumbersUp.counter += 1
     return countNumbersUp.counter
-countNumbersUp.counter = 0
+countNumbersUp.counter = 0    
 
 class plotTemplate:    
     pathName = "fig/"
@@ -286,25 +286,41 @@ class plotTemplate:
     
     def addSecondaryPlot(self,hist, drawOption="", label = None):
         self.secondaryPlots.append((hist, drawOption, label))
-    
+        
+    residuePlots = []
+    residueGraphs = []
+    residueLabel = ""
+    residueRangeUp =  3
+    residueRangeLow = None
+    residueRangeMode = "MANUAL" # AUTO,
+    residueRangeScale = 1.1 
+    residueZeroLineDo = True
+    residueZeroLine = None
+    residueZeroLineWidth = 2
+    residueZeroLineStyle = 2
+    residueZeroLineColor = ROOT.kBlack
+    hasResidue = False
+    def addResiduePlot(self, h1, h2, color=ROOT.kBlack, markerStyle=20, markerSize=1, fillColor=ROOT.kWhite, errList=None, options=""):
+        self.residuePlots.append((h1, h2, color, markerStyle, markerSize, fillColor, errList, options))
+      
     def clearSecondaryPlots(self):
         self.secondaryPlots = []
     
     def drawCanvas(self):
         self.canvas = ROOT.TCanvas("hCanvas%d"%(countNumbersUp()), "", 800,800)
-        if self.hasRatio or self.hasEfficiency or self.hasBottomWindow:
+        if self.hasRatio or self.hasEfficiency or self.hasResidue or self.hasBottomWindow:
             self.plotPad = ROOT.TPad("plotPad","plotPad",0,self.ratioPadHeight,1,1)
         else:
             self.plotPad = ROOT.TPad("plotPad","plotPad",0,0,1,1)
         self.plotPad.UseCurrentStyle()
         self.plotPad.Draw()  
         
-        if self.hasRatio or self.hasEfficiency or self.hasBottomWindow:
+        if self.hasRatio or self.hasEfficiency or self.hasResidue or self.hasBottomWindow:
             self.ratioPad = ROOT.TPad("ratioPad","ratioPad",0,0,1,self.ratioPadHeight)
             self.ratioPad.UseCurrentStyle()
             self.ratioPad.Draw()
          
-        if self.hasRatio or self.hasEfficiency or self.hasBottomWindow:
+        if self.hasRatio or self.hasEfficiency or self.hasResidue or self.hasBottomWindow:
             self.plotPad.SetTopMargin    (self.marginTop)
             self.plotPad.SetLeftMargin   (self.marginLeft)
             self.plotPad.SetRightMargin  (self.marginRight)
@@ -321,7 +337,7 @@ class plotTemplate:
         
         if self.logX:
             self.plotPad.SetLogx()
-            if self.hasRatio or self.hasEfficiency or self.hasBottomWindow:
+            if self.hasRatio or self.hasEfficiency or self.hasResidue or self.hasBottomWindow:
                 self.ratioPad.SetLogx()
         if self.logY:
             self.plotPad.SetLogy()
@@ -438,15 +454,19 @@ class plotTemplate:
         self.legend         = None
         self.secondaryPlots = []
         self.ratioGraphs    = []
+        self.residueGraphs  = []
+        self.residuePlots   = []
+        self.residueZeroLine= None
         self.ratioPairs     = []
         self.pathName       = "fig/"
         self.folderName     = ""
         self.canvas         = None
         self.plotPad        = None
         self.ratioPad       = None
+        self.hAxis          = None
     
     def drawRatioPlots(self):
-        if self.hasRatio or self.hasEfficiency:
+        if self.hasRatio or self.hasEfficiency or self.hasResidue:
             self.ratioPad.cd()
             if self.hasRatio:
                 self.ratioGraphs = []
@@ -466,7 +486,8 @@ class plotTemplate:
                     
             elif self.hasEfficiency:
                 self.ratioGraphs = []
-                self.hAxis = ROOT.TH2F("hAxis%d"%(countNumbersUp()), "", 20, self.primaryPlot[0].GetXaxis().GetBinLowEdge(1), self.primaryPlot[0].GetXaxis().GetBinUpEdge(self.primaryPlot[0].GetNbinsX()), 10, self.efficiencyMin, self.efficiencyMax)    
+                self.plotPad.Update() # So that Uxmin and Uxmax are retrievable
+                self.hAxis = ROOT.TH2F("hAxis%d"%(countNumbersUp()), "", 20, self.plotPad.GetUxmin(), self.plotPad.GetUxmax(), 10, self.efficiencyMin, self.efficiencyMax)    
                 self.hAxis.GetYaxis().SetNdivisions(408)
                 self.hAxis.GetYaxis().SetTitleOffset(0.4)
                 self.hAxis.GetYaxis().SetTitleSize(0.15)
@@ -482,17 +503,178 @@ class plotTemplate:
                     tmp.SetMarkerStyle(markerstyle)
                     self.ratioGraphs.append(tmp)
                     self.ratioGraphs[len(self.ratioGraphs)-1].Draw("same P")
-
+                    
+            elif self.hasResidue:
+                low = self.residueRangeLow if (self.residueRangeLow != None) else -self.residueRangeUp
+                up  = self.residueRangeUp
+                
+                minRes =  100000000000.0
+                maxRes = -100000000000.0
+                
+                self.plotPad.Update() # So that Uxmin and Uxmax are retrievable
+                self.hAxis = ROOT.TH2F("hAxis%d"%(countNumbersUp()), "", 20, self.plotPad.GetUxmin(), self.plotPad.GetUxmax(), 10, low, up)    
+                self.hAxis.GetYaxis().SetNdivisions(408)
+                self.hAxis.GetYaxis().SetTitleOffset(0.4)
+                self.hAxis.GetYaxis().SetTitleSize(0.15)
+                self.hAxis.GetXaxis().SetLabelSize(0.0)
+                self.hAxis.GetYaxis().SetLabelSize(0.15)
+                self.hAxis.GetXaxis().SetNdivisions(self.primaryPlot[0].GetXaxis().GetNdivisions())
+                self.hAxis.GetYaxis().SetTitle(self.residueLabel)
+                self.hAxis.Draw("AXIS")
+                
+                if self.residueZeroLineDo:
+                    self.residueZeroLine = ROOT.TLine(self.plotPad.GetUxmin(),0,self.plotPad.GetUxmax(),0)
+                    self.residueZeroLine.SetLineColor(self.residueZeroLineColor)
+                    self.residueZeroLine.SetLineWidth(self.residueZeroLineWidth)
+                    self.residueZeroLine.SetLineStyle(self.residueZeroLineStyle)
+                    self.residueZeroLine.Draw("same")
+                
+                self.residueGraphs = []
+                
+                for h1, h2, color, markerstyle, markersize, fillcolor, errList, options in self.residuePlots:
+                    
+                    tmp = ROOT.TGraphAsymmErrors()
+                    tmp.SetMarkerColor(color)
+                    tmp.SetMarkerSize(markersize)
+                    tmp.SetLineColor(color)
+                    tmp.SetFillColor(fillcolor)
+                    tmp.SetMarkerStyle(markerstyle)
+                    self.residueGraphs.append(tmp)
+                    if h1.InheritsFrom(ROOT.TH1.Class()):
+                        slope = 0
+                        for i in range(1, h1.GetNbinsX()+1):
+                            
+                            xPos = h1.GetBinCenter(i)
+                            minuent = h1.GetBinContent(i)
+                            minuent_err = (h1.GetBinErrorLow(i), h1.GetBinErrorUp(i))
+                            
+                            
+                            if h2.InheritsFrom(ROOT.TH1.Class()):
+                                subtrahent = h2.GetBinContent(h2.FindBin(xPos))
+                                subtrahent_err = (h2.GetBinErrorLow(h2.FindBin(xPos)), h2.GetBinErrorUp(h2.FindBin(xPos)))
+                            elif h2.InheritsFrom(ROOT.TF1.Class()):
+                                subtrahent = h2.Eval(xPos)
+                                slope = h2.Derivative(xPos)
+                                subtrahent_err = (0,0)
+                            else: 
+                                print "Error in drawResidues: Invalid type of subtrahent", h1
+                                exit()
+                            
+                            residue = minuent - subtrahent
+                            if residue >= 0:
+                                i_m = 0
+                                i_s = 1
+                            else:
+                                i_m = 1
+                                i_s = 0
+                                
+                            residue_err = (minuent_err[i_m]**2 + subtrahent_err[i_s]**2)**0.5
+                            if errList != None:
+                                residue_err = errList[i-1]
+                            
+                            if "P" in options:
+                                if residue_err > 0:
+                                    residue /= residue_err
+                                    residue_err = 1
+                                else:
+                                    residue = 0
+                                    residue_err = 0
+                                
+                            if "-" in options:
+                                residue = -residue
+                            
+                            if residue < minRes:
+                                minRes = residue
+                            if residue > maxRes:
+                                maxRes = residue
+                            
+                            tmp.SetPoint(i, xPos, residue)
+                            tmp.SetPointError(i, 0, 0, residue_err, residue_err)
+                                
+                    elif h1.InheritsFrom(ROOT.TGraphErrors.Class()):
+                        for i in range(h1.GetN()):
+                            xPos = h1.GetX()[i]
+                            minuent = h1.GetY()[i]
+                            if h1.InheritsFrom(ROOT.TGraphAsymmErrors.Class()):
+                                    minuent_err = (h1.GetEYlow()[i], h1.GetEYhigh()[i])
+                            else:
+                                    minuent_err = (h1.GetEY()[i], h1.GetEY()[i])
+                                    
+                            if h2.InheritsFrom(ROOT.TH1.Class()):
+                                subtrahent = h2.GetBinContent(h2.FindBin(xPos))
+                                subtrahent_err = h2.GetBinError(h2.FindBin(xPos))
+                            elif h2.InheritsFrom(ROOT.TGraphErrors.Class()):
+                                subtrahent = h2.GetY()[i]
+                                if h2.InheritsFrom(ROOT.TGraphAsymmErrors.Class()):
+                                    subtrahent_err = (h2.GetEYlow()[i], h2.GetEYhigh()[i])
+                                else:
+                                    subtrahent_err = (h2.GetEY()[i], h2.GetEY()[i])
+                            elif h2.InheritsFrom(ROOT.TF1.Class()):
+                                subtrahent = h2.Eval(xPos)
+                                subtrahent_err = (0,0)
+                                
+                            residue = minuent - subtrahent
+                            if residue >= 0:
+                                i_m = 0
+                                i_s = 1
+                            else:
+                                i_m = 1
+                                i_s = 0
+                                
+                            residue_err = (minuent_err[i_m]**2 + subtrahent_err[i_s]**2 )**0.5
+                            if errList != None:
+                                residue_err = errList[i]
+                            
+                            if "P" in options:
+                                if residue_err > 0:
+                                    residue /= residue_err
+                                    residue_err = 1
+                                else:
+                                    residue = 0
+                                    residue_err = 0
+                            if "-" in options:
+                                residue = -residue
+                            
+                            if residue < minRes:
+                                minRes = residue
+                            if residue > maxRes:
+                                maxRes = residue
+                            
+                            tmp.SetPoint(i, xPos, residue)
+                            tmp.SetPointError(i, 0, 0, residue_err, residue_err)
+                    
+                    
+                    else:
+                        print "Error in drawResidues: Invalid type of minuent ", h2
+                        exit()
+                
+                    if "H" in options:
+                        tmp.Draw("same BX")
+                    else:
+                        tmp.Draw("same P")
+                
+                if self.residueRangeMode.upper() == "AUTO":
+                    boundaries = max(abs(minRes), maxRes)
+                    boundLow = -boundaries * self.residueRangeScale
+                    boundUp = boundaries * self.residueRangeScale      
+                    self.hAxis.GetYaxis().SetLimits(boundLow, boundUp)              
+                elif self.residueRangeMode.upper() == "AUTOASYMM":
+                    boundLow = minRes * self.residueRangeScale
+                    boundUp = maxRes * self.residueRangeScale
+                    self.hAxis.GetYaxis().SetLimits(boundLow, boundUp)              
+                
+    
     def draw(self):
         self.drawCanvas()
           
         if self.changeScale:
-            if self.maximum == None:
-                self.primaryPlot[0].SetMaximum(self.primaryPlot[0].GetMaximum()*self.maximumScale)
-            else:
-                self.primaryPlot[0].SetMaximum(self.maximum)
-            if self.minimum != None:
-                self.primaryPlot[0].SetMinimum(self.minimum)
+            if self.primaryPlot[0].InheritsFrom(ROOT.TH1.Class()):
+                if self.maximum == None:
+                    self.primaryPlot[0].SetMaximum(self.primaryPlot[0].GetMaximum()*self.maximumScale)
+                else:
+                    self.primaryPlot[0].SetMaximum(self.maximum)
+                if self.minimum != None:
+                    self.primaryPlot[0].SetMinimum(self.minimum)
         
         if self.labelX != None:
             self.primaryPlot[0].GetXaxis().SetTitle(self.labelX)
@@ -539,6 +721,7 @@ class plotTemplate:
             
             self.legend.Draw("same")
             
+# simple example on how to create a custom template
 class plotTemplate2D(plotTemplate):
     marginRight = 0.2
     regionPosX = 0.78
