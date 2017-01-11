@@ -505,215 +505,223 @@ class plotTemplate:
     def drawRatioPlots(self):
         if self.hasRatio or self.hasEfficiency or self.hasResidual:
             self.ratioPad.cd()
-            if self.hasRatio:
-                self.ratioGraphs = []
-                for nominator, denominator, color, markerstyle in self.ratioPairs:
-                    self.ratioGraphs.append(ratios.RatioGraph(nominator, denominator, xMin=self.primaryPlot[0].GetXaxis().GetBinLowEdge(1), xMax=self.primaryPlot[0].GetXaxis().GetBinUpEdge(self.primaryPlot[0].GetNbinsX()),title=self.ratioLabel,yMin=self.ratioMin,yMax=self.ratioMax,ndivisions=10,color=color,  adaptiveBinning=1000 ))
-                for err in self.ratioErrsSize:
-                    self.ratioGraphs[err[5]].addErrorBySize(err[0],err[1],err[2],err[3],err[4])
-                for err in self.ratioErrsHist:
-                    self.ratioGraphs[err[5]].addErrorByHistograms(err[0],err[1],err[2],err[3],err[4])
-                for number,graph in enumerate(self.ratioGraphs):
-                    if number == 0:
-                        graph.draw(ROOT.gPad,True,False,True,chi2Pos=0.8)
-                        graph.hAxis.GetXaxis().SetNdivisions(self.primaryPlot[0].GetXaxis().GetNdivisions())
-                    else:
-                        graph.draw(ROOT.gPad,False,False,True,chi2Pos=0.8)
-                    graph.graph.SetMarkerStyle(markerstyle)
-                    
-            elif self.hasEfficiency:
-                self.ratioGraphs = []
-                self.plotPad.Update() # So that Uxmin and Uxmax are retrievable
-                self.hAxis = ROOT.TH2F("hAxis%d"%(countNumbersUp()), "", 20, self.plotPad.GetUxmin(), self.plotPad.GetUxmax(), 10, self.efficiencyMin, self.efficiencyMax)    
-                self.hAxis.GetYaxis().SetNdivisions(408)
-                self.hAxis.GetYaxis().SetTitleOffset(0.4)
-                self.hAxis.GetYaxis().SetTitleSize(0.15)
-                self.hAxis.GetXaxis().SetLabelSize(0.0)
-                self.hAxis.GetYaxis().SetLabelSize(0.15)
-                self.hAxis.GetXaxis().SetNdivisions(self.primaryPlot[0].GetXaxis().GetNdivisions())
-                self.hAxis.GetYaxis().SetTitle(self.efficiencyLabel)
-                self.hAxis.Draw("AXIS")
-                for nominator, denominator, color, markerstyle in self.ratioPairs:
-                    tmp = ROOT.TGraphAsymmErrors(nominator,denominator, self.efficiencyOption)
-                    tmp.SetMarkerColor(color)
-                    tmp.SetLineColor(color)
-                    tmp.SetMarkerStyle(markerstyle)
-                    self.ratioGraphs.append(tmp)
-                    self.ratioGraphs[len(self.ratioGraphs)-1].Draw("same P")
-                    
-            elif self.hasResidual:
-                low = self.residualRangeLow if (self.residualRangeLow != None) else -self.residualRangeUp
-                up  = self.residualRangeUp
+            
+        if self.hasRatio:
+            self.ratioGraphs = []
+            for nominator, denominator, color, markerstyle in self.ratioPairs:
+                self.ratioGraphs.append(ratios.RatioGraph(nominator, denominator, xMin=self.primaryPlot[0].GetXaxis().GetBinLowEdge(1), xMax=self.primaryPlot[0].GetXaxis().GetBinUpEdge(self.primaryPlot[0].GetNbinsX()),title=self.ratioLabel,yMin=self.ratioMin,yMax=self.ratioMax,ndivisions=10,color=color,  adaptiveBinning=1000 ))
+            for err in self.ratioErrsSize:
+                self.ratioGraphs[err[5]].addErrorBySize(err[0],err[1],err[2],err[3],err[4])
+            for err in self.ratioErrsHist:
+                self.ratioGraphs[err[5]].addErrorByHistograms(err[0],err[1],err[2],err[3],err[4])
+            for number,graph in enumerate(self.ratioGraphs):
+                if number == 0:
+                    graph.draw(ROOT.gPad,True,False,True,chi2Pos=0.8)
+                    graph.hAxis.GetXaxis().SetNdivisions(self.primaryPlot[0].GetXaxis().GetNdivisions())
+                else:
+                    graph.draw(ROOT.gPad,False,False,True,chi2Pos=0.8)
+                graph.graph.SetMarkerStyle(markerstyle)
                 
-                minRes =  100000000000.0
-                maxRes = -100000000000.0
+        elif self.hasEfficiency:
+            self.ratioGraphs = []
+            self.plotPad.Update() # So that Uxmin and Uxmax are retrievable
+            self.hAxis = ROOT.TH2F("hAxis%d"%(countNumbersUp()), "", 20, self.plotPad.GetUxmin(), self.plotPad.GetUxmax(), 10, self.efficiencyMin, self.efficiencyMax)    
+            self.hAxis.GetYaxis().SetNdivisions(408)
+            self.hAxis.GetYaxis().SetTitleOffset(0.4)
+            self.hAxis.GetYaxis().SetTitleSize(0.15)
+            self.hAxis.GetXaxis().SetLabelSize(0.0)
+            self.hAxis.GetYaxis().SetLabelSize(0.15)
+            self.hAxis.GetXaxis().SetNdivisions(self.primaryPlot[0].GetXaxis().GetNdivisions())
+            self.hAxis.GetYaxis().SetTitle(self.efficiencyLabel)
+            self.hAxis.Draw("AXIS")
+            for nominator, denominator, color, markerstyle in self.ratioPairs:
+                tmp = ROOT.TGraphAsymmErrors(nominator,denominator, self.efficiencyOption)
+                tmp.SetMarkerColor(color)
+                tmp.SetLineColor(color)
+                tmp.SetMarkerStyle(markerstyle)
+                self.ratioGraphs.append(tmp)
+                self.ratioGraphs[len(self.ratioGraphs)-1].Draw("same P")
                 
-                self.plotPad.Update() # So that Uxmin and Uxmax are retrievable
-                self.hAxis = ROOT.TH2F("hAxis%d"%(countNumbersUp()), "", 20, self.plotPad.GetUxmin(), self.plotPad.GetUxmax(), 10, low, up)    
-                self.hAxis.GetYaxis().SetNdivisions(408)
-                self.hAxis.GetYaxis().SetTitleOffset(0.4)
-                self.hAxis.GetYaxis().SetTitleSize(0.15)
-                self.hAxis.GetXaxis().SetLabelSize(0.0)
-                self.hAxis.GetYaxis().SetLabelSize(0.15)
-                self.hAxis.GetXaxis().SetNdivisions(self.primaryPlot[0].GetXaxis().GetNdivisions())
-                self.hAxis.GetYaxis().SetTitle(self.residualLabel)
-                self.hAxis.Draw("AXIS")
+        elif self.hasResidual:
+            low = self.residualRangeLow if (self.residualRangeLow != None) else -self.residualRangeUp
+            up  = self.residualRangeUp
+            
+            minRes =  100000000000.0
+            maxRes = -100000000000.0
+            
+            self.plotPad.Update() # So that Uxmin and Uxmax are retrievable
+            self.hAxis = ROOT.TH2F("hAxis%d"%(countNumbersUp()), "", 20, self.plotPad.GetUxmin(), self.plotPad.GetUxmax(), 10, low, up)    
+            self.hAxis.GetYaxis().SetNdivisions(408)
+            self.hAxis.GetYaxis().SetTitleOffset(0.4)
+            self.hAxis.GetYaxis().SetTitleSize(0.15)
+            self.hAxis.GetXaxis().SetLabelSize(0.0)
+            self.hAxis.GetYaxis().SetLabelSize(0.15)
+            self.hAxis.GetXaxis().SetNdivisions(self.primaryPlot[0].GetXaxis().GetNdivisions())
+            self.hAxis.GetYaxis().SetTitle(self.residualLabel)
+            self.hAxis.Draw("AXIS")
+            
+            if self.residualZeroLineDo:
+                self.residualZeroLine = ROOT.TLine(self.plotPad.GetUxmin(),0,self.plotPad.GetUxmax(),0)
+                self.residualZeroLine.SetLineColor(self.residualZeroLineColor)
+                self.residualZeroLine.SetLineWidth(self.residualZeroLineWidth)
+                self.residualZeroLine.SetLineStyle(self.residualZeroLineStyle)
+                self.residualZeroLine.Draw("same")
+            
+            self.residualGraphs = []
+            
+            for h1, h2, resRange, color, markerstyle, markersize, fillcolor, errList, options in self.residualPlots:
                 
-                if self.residualZeroLineDo:
-                    self.residualZeroLine = ROOT.TLine(self.plotPad.GetUxmin(),0,self.plotPad.GetUxmax(),0)
-                    self.residualZeroLine.SetLineColor(self.residualZeroLineColor)
-                    self.residualZeroLine.SetLineWidth(self.residualZeroLineWidth)
-                    self.residualZeroLine.SetLineStyle(self.residualZeroLineStyle)
-                    self.residualZeroLine.Draw("same")
-                
-                self.residualGraphs = []
-                
-                for h1, h2, resRange, color, markerstyle, markersize, fillcolor, errList, options in self.residualPlots:
-                    
-                    tmp = ROOT.TGraphAsymmErrors()
-                    tmp.SetMarkerColor(color)
-                    tmp.SetMarkerSize(markersize)
-                    tmp.SetLineColor(color)
-                    tmp.SetFillColor(fillcolor)
-                    tmp.SetMarkerStyle(markerstyle)
-                    self.residualGraphs.append(tmp)
-                    if h1.InheritsFrom(ROOT.TH1.Class()):
-                        slope = 0
-                        for i in range(1, h1.GetNbinsX()+1):
+                tmp = ROOT.TGraphAsymmErrors()
+                tmp.SetMarkerColor(color)
+                tmp.SetMarkerSize(markersize)
+                tmp.SetLineColor(color)
+                tmp.SetFillColor(fillcolor)
+                tmp.SetMarkerStyle(markerstyle)
+                self.residualGraphs.append(tmp)
+                if h1.InheritsFrom(ROOT.TH1.Class()):
+                    slope = 0
+                    for i in range(1, h1.GetNbinsX()+1):
+                        
+                        xPos = h1.GetBinCenter(i)
+                        if resRange != None:
+                            if xPos > resRange[1] or xPos < resRange[0]:
+                                #tmp.SetPoint(i, xPos, 0)
+                                #tmp.SetPointError(i, 0, 0, 0, 0)
+                                continue
+                        
+                        minuent = h1.GetBinContent(i)
+                        minuent_err = (h1.GetBinErrorLow(i), h1.GetBinErrorUp(i))
+                        
+                        
+                        
+                        if h2.InheritsFrom(ROOT.TH1.Class()):
+                            subtrahent = h2.GetBinContent(h2.FindBin(xPos))
+                            subtrahent_err = (h2.GetBinErrorLow(h2.FindBin(xPos)), h2.GetBinErrorUp(h2.FindBin(xPos)))
+                        elif h2.InheritsFrom(ROOT.TF1.Class()):
+                            subtrahent = h2.Eval(xPos)
+                            slope = h2.Derivative(xPos)
+                            subtrahent_err = (0,0)
+                        else: 
+                            print "Error in drawResiduals: Invalid type of subtrahent", h1
+                            exit()
+                        
+                        residual = minuent - subtrahent
+                        if residual >= 0:
+                            i_m = 0
+                            i_s = 1
+                        else:
+                            i_m = 1
+                            i_s = 0
                             
-                            xPos = h1.GetBinCenter(i)
-                            if resRange != None:
-                                if xPos > resRange[1] or xPos < resRange[0]:
-                                    tmp.SetPoint(i, xPos, 0)
-                                    tmp.SetPointError(i, 0, 0, 0, 0)
-                                    continue
-                            
-                            minuent = h1.GetBinContent(i)
-                            minuent_err = (h1.GetBinErrorLow(i), h1.GetBinErrorUp(i))
-                            
-                            
-                            
-                            if h2.InheritsFrom(ROOT.TH1.Class()):
-                                subtrahent = h2.GetBinContent(h2.FindBin(xPos))
-                                subtrahent_err = (h2.GetBinErrorLow(h2.FindBin(xPos)), h2.GetBinErrorUp(h2.FindBin(xPos)))
-                            elif h2.InheritsFrom(ROOT.TF1.Class()):
-                                subtrahent = h2.Eval(xPos)
-                                slope = h2.Derivative(xPos)
-                                subtrahent_err = (0,0)
-                            else: 
-                                print "Error in drawResiduals: Invalid type of subtrahent", h1
-                                exit()
-                            
-                            residual = minuent - subtrahent
-                            if residual >= 0:
-                                i_m = 0
-                                i_s = 1
+                        residual_err = (minuent_err[i_m]**2 + subtrahent_err[i_s]**2)**0.5
+                        if errList != None:
+                            residual_err = errList[i-1]
+                        
+                        if "P" in options:
+                            if residual_err > 0:
+                                residual /= residual_err
+                                residual_err = 1
                             else:
-                                i_m = 1
-                                i_s = 0
-                                
-                            residual_err = (minuent_err[i_m]**2 + subtrahent_err[i_s]**2)**0.5
-                            if errList != None:
-                                residual_err = errList[i-1]
+                                residual = 0
+                                residual_err = 0
                             
-                            if "P" in options:
-                                if residual_err > 0:
-                                    residual /= residual_err
-                                    residual_err = 1
-                                else:
-                                    residual = 0
-                                    residual_err = 0
-                                
-                            if "-" in options:
-                                residual = -residual
+                        if "-" in options:
+                            residual = -residual
+                        
+                        if residual < minRes:
+                            minRes = residual
+                        if residual > maxRes:
+                            maxRes = residual
                             
-                            if residual < minRes:
-                                minRes = residual
-                            if residual > maxRes:
-                                maxRes = residual
-                                
+                        
+                        tmp.SetPoint(i, xPos, residual)
+                        tmp.SetPointError(i, 0, 0, residual_err, residual_err)
                             
-                            tmp.SetPoint(i, xPos, residual)
-                            tmp.SetPointError(i, 0, 0, residual_err, residual_err)
-                                
-                    elif h1.InheritsFrom(ROOT.TGraphErrors.Class()):
-                        for i in range(h1.GetN()):
-                            xPos = h1.GetX()[i]
-                            if resRange != None:
-                                if xPos > resRange[1] or xPos < resRange[0]:
-                                    tmp.SetPoint(i, xPos, 0)
-                                    tmp.SetPointError(i, 0, 0, 0, 0)
-                                    continue
+                elif h1.InheritsFrom(ROOT.TGraphErrors.Class()):
+                    for i in range(h1.GetN()):
+                        xPos = h1.GetX()[i]
+                        if resRange != None:
+                            if xPos > resRange[1] or xPos < resRange[0]:
+                                #tmp.SetPoint(i, xPos, 0)
+                                #tmp.SetPointError(i, 0, 0, 0, 0)
+                                continue
 
-                            
-                            minuent = h1.GetY()[i]
-                            if h1.InheritsFrom(ROOT.TGraphAsymmErrors.Class()):
-                                    minuent_err = (h1.GetEYlow()[i], h1.GetEYhigh()[i])
-                            else:
-                                    minuent_err = (h1.GetEY()[i], h1.GetEY()[i])
-                                    
-                            if h2.InheritsFrom(ROOT.TH1.Class()):
-                                subtrahent = h2.GetBinContent(h2.FindBin(xPos))
-                                subtrahent_err = h2.GetBinError(h2.FindBin(xPos))
-                            elif h2.InheritsFrom(ROOT.TGraphErrors.Class()):
-                                subtrahent = h2.GetY()[i]
-                                if h2.InheritsFrom(ROOT.TGraphAsymmErrors.Class()):
-                                    subtrahent_err = (h2.GetEYlow()[i], h2.GetEYhigh()[i])
-                                else:
-                                    subtrahent_err = (h2.GetEY()[i], h2.GetEY()[i])
-                            elif h2.InheritsFrom(ROOT.TF1.Class()):
-                                subtrahent = h2.Eval(xPos)
-                                subtrahent_err = (0,0)
+                        
+                        minuent = h1.GetY()[i]
+                        if h1.InheritsFrom(ROOT.TGraphAsymmErrors.Class()):
+                                minuent_err = (h1.GetEYlow()[i], h1.GetEYhigh()[i])
+                        else:
+                                minuent_err = (h1.GetEY()[i], h1.GetEY()[i])
                                 
-                            residual = minuent - subtrahent
-                            if residual >= 0:
-                                i_m = 0
-                                i_s = 1
+                        if h2.InheritsFrom(ROOT.TH1.Class()):
+                            subtrahent = h2.GetBinContent(h2.FindBin(xPos))
+                            subtrahent_err = h2.GetBinError(h2.FindBin(xPos))
+                        elif h2.InheritsFrom(ROOT.TGraphErrors.Class()):
+                            subtrahent = h2.GetY()[i]
+                            if h2.InheritsFrom(ROOT.TGraphAsymmErrors.Class()):
+                                subtrahent_err = (h2.GetEYlow()[i], h2.GetEYhigh()[i])
                             else:
-                                i_m = 1
-                                i_s = 0
-                                
-                            residual_err = (minuent_err[i_m]**2 + subtrahent_err[i_s]**2 )**0.5
-                            if errList != None:
-                                residual_err = errList[i]
+                                subtrahent_err = (h2.GetEY()[i], h2.GetEY()[i])
+                        elif h2.InheritsFrom(ROOT.TF1.Class()):
+                            subtrahent = h2.Eval(xPos)
+                            subtrahent_err = (0,0)
                             
-                            if "P" in options:
-                                if residual_err > 0:
-                                    residual /= residual_err
-                                    residual_err = 1
-                                else:
-                                    residual = 0
-                                    residual_err = 0
-                            if "-" in options:
-                                residual = -residual
+                        residual = minuent - subtrahent
+                        if residual >= 0:
+                            i_m = 0
+                            i_s = 1
+                        else:
+                            i_m = 1
+                            i_s = 0
                             
-                            if residual < minRes:
-                                minRes = residual
-                            if residual > maxRes:
-                                maxRes = residual
-                            
-                            tmp.SetPoint(i, xPos, residual)
-                            tmp.SetPointError(i, 0, 0, residual_err, residual_err)
-                    
-                    
-                    else:
-                        print "Error in drawResiduals: Invalid type of minuent ", h2
-                        exit()
+                        residual_err = (minuent_err[i_m]**2 + subtrahent_err[i_s]**2 )**0.5
+                        if errList != None:
+                            residual_err = errList[i]
+                        
+                        if "P" in options:
+                            if residual_err > 0:
+                                residual /= residual_err
+                                residual_err = 1
+                            else:
+                                residual = 0
+                                residual_err = 0
+                        if "-" in options:
+                            residual = -residual
+                        
+                        if residual < minRes:
+                            minRes = residual
+                        if residual > maxRes:
+                            maxRes = residual
+                        
+                        tmp.SetPoint(i, xPos, residual)
+                        tmp.SetPointError(i, 0, 0, residual_err, residual_err)
                 
-                    if "H" in options:
-                        tmp.Draw("same BX")
-                    else:
-                        tmp.Draw("same P")
                 
-                if self.residualRangeMode.upper() == "AUTO":
-                    boundaries = max(abs(minRes), maxRes)
-                    boundLow = -boundaries * self.residualRangeScale
-                    boundUp = boundaries * self.residualRangeScale      
-                    self.hAxis.GetYaxis().SetLimits(boundLow, boundUp)              
-                elif self.residualRangeMode.upper() == "AUTOASYMM":
-                    boundLow = minRes * self.residualRangeScale
-                    boundUp = maxRes * self.residualRangeScale
-                    self.hAxis.GetYaxis().SetLimits(boundLow, boundUp)              
+                else:
+                    print "Error in drawResiduals: Invalid type of minuent ", h2
+                    exit()
+                
+                l = self.plotPad.GetUxmin()
+                t = self.plotPad.GetUxmax()
+                
+                tmp.SetPoint(i+1, l-0.01*(t-l),0)
+                tmp.SetPoint(i+2, t+0.01*(t-l),0)
+                
+                if "H" in options:
+                    tmp.Draw("same BX")
+                else:
+                    tmp.Draw("same P")
+            
+            if self.residualRangeMode.upper() == "AUTO":
+                boundaries = max(abs(minRes), maxRes)
+                boundLow = -boundaries * self.residualRangeScale
+                boundUp = boundaries * self.residualRangeScale      
+                self.hAxis.GetYaxis().SetLimits(boundLow, boundUp)              
+            elif self.residualRangeMode.upper() == "AUTOASYMM":
+                boundLow = minRes * self.residualRangeScale
+                boundUp = maxRes * self.residualRangeScale
+                self.hAxis.GetYaxis().SetLimits(boundLow, boundUp)     
+        
                 
     
     def draw(self):
