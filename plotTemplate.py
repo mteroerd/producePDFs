@@ -513,8 +513,9 @@ class plotTemplate:
             
         if self.hasRatio:
             self.ratioGraphs = []
+            self.plotPad.Update() # So that Uxmin and Uxmax are retrievable
             for nominator, denominator, color, markerstyle in self.ratioPairs:
-                self.ratioGraphs.append(ratios.RatioGraph(nominator, denominator, xMin=self.primaryPlot[0].GetXaxis().GetBinLowEdge(1), xMax=self.primaryPlot[0].GetXaxis().GetBinUpEdge(self.primaryPlot[0].GetNbinsX()),title=self.ratioLabel,yMin=self.ratioMin,yMax=self.ratioMax,ndivisions=10,color=color,  adaptiveBinning=1000 ))
+                self.ratioGraphs.append(ratios.RatioGraph(nominator, denominator, xMin=self.plotPad.GetUxmin(), xMax=self.plotPad.GetUxmax(),title=self.ratioLabel,yMin=self.ratioMin,yMax=self.ratioMax,ndivisions=10,color=color,  adaptiveBinning=1000 ))
             for err in self.ratioErrsSize:
                 self.ratioGraphs[err[5]].addErrorBySize(err[0],err[1],err[2],err[3],err[4])
             for err in self.ratioErrsHist:
