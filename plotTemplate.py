@@ -345,19 +345,24 @@ class plotTemplate:
     
     def drawCanvas(self):
         self.canvas = ROOT.TCanvas("hCanvas%d"%(countNumbersUp()), "", 800,800)
-        if self.hasRatio or self.hasEfficiency or self.hasResidual or self.hasBottomWindow:
+        
+        doRatioPad = any((self.hasRatio, self.hasEfficiency, self.hasResidual, self.hasBottomWindow))
+        
+        if doRatioPad:
             self.plotPad = ROOT.TPad("plotPad","plotPad",0,self.ratioPadHeight,1,1)
         else:
             self.plotPad = ROOT.TPad("plotPad","plotPad",0,0,1,1)
         self.plotPad.UseCurrentStyle()
         self.plotPad.Draw()  
         
-        if self.hasRatio or self.hasEfficiency or self.hasResidual or self.hasBottomWindow:
+        
+        
+        if doRatioPad:
             self.ratioPad = ROOT.TPad("ratioPad","ratioPad",0,0,1,self.ratioPadHeight)
             self.ratioPad.UseCurrentStyle()
             self.ratioPad.Draw()
          
-        if self.hasRatio or self.hasEfficiency or self.hasResidual or self.hasBottomWindow:
+        if doRatioPad:
             self.plotPad.SetTopMargin    (self.marginTop)
             self.plotPad.SetLeftMargin   (self.marginLeft)
             self.plotPad.SetRightMargin  (self.marginRight)
@@ -374,7 +379,7 @@ class plotTemplate:
         
         if self.logX:
             self.plotPad.SetLogx()
-            if self.hasRatio or self.hasEfficiency or self.hasResidual or self.hasBottomWindow:
+            if doRatioPad:
                 self.ratioPad.SetLogx()
         if self.logY:
             self.plotPad.SetLogy()
@@ -578,6 +583,13 @@ class plotTemplate:
                 tmp.SetFillColor(fillcolor)
                 tmp.SetMarkerStyle(markerstyle)
                 self.residualGraphs.append(tmp)
+                
+                xpos = []
+                minu = []
+                subt = []
+                minu_err = []
+                subt_err = []
+                
                 if h1.InheritsFrom(ROOT.TH1.Class()):
                     slope = 0
                     for i in range(1, h1.GetNbinsX()+1):
@@ -605,37 +617,11 @@ class plotTemplate:
                             print "Error in drawResiduals: Invalid type of subtrahent", h1
                             exit()
                         
-                        residual = minuent - subtrahent
-                        if residual >= 0:
-                            i_m = 0
-                            i_s = 1
-                        else:
-                            i_m = 1
-                            i_s = 0
-                            
-                        residual_err = (minuent_err[i_m]**2 + subtrahent_err[i_s]**2)**0.5
-                        if errList != None:
-                            residual_err = errList[i-1]
-                        
-                        if "P" in options:
-                            if residual_err > 0:
-                                residual /= residual_err
-                                residual_err = 1
-                            else:
-                                residual = 0
-                                residual_err = 0
-                            
-                        if "-" in options:
-                            residual = -residual
-                        
-                        if residual < minRes:
-                            minRes = residual
-                        if residual > maxRes:
-                            maxRes = residual
-                            
-                        
-                        tmp.SetPoint(i, xPos, residual)
-                        tmp.SetPointError(i, 0, 0, residual_err, residual_err)
+                        xpos.append(xPos)
+                        minu.append(minuent)
+                        subt.append(subtrahent)
+                        minu_err.append(minuent_err)
+                        subt_err.append(subtrahent_err)
                             
                 elif h1.InheritsFrom(ROOT.TGraphErrors.Class()):
                     for i in range(h1.GetN()):
@@ -665,47 +651,51 @@ class plotTemplate:
                         elif h2.InheritsFrom(ROOT.TF1.Class()):
                             subtrahent = h2.Eval(xPos)
                             subtrahent_err = (0,0)
-                            
-                        residual = minuent - subtrahent
-                        if residual >= 0:
-                            i_m = 0
-                            i_s = 1
-                        else:
-                            i_m = 1
-                            i_s = 0
-                            
-                        residual_err = (minuent_err[i_m]**2 + subtrahent_err[i_s]**2 )**0.5
-                        if errList != None:
-                            residual_err = errList[i]
                         
-                        if "P" in options:
-                            if residual_err > 0:
-                                residual /= residual_err
-                                residual_err = 1
-                            else:
-                                residual = 0
-                                residual_err = 0
-                        if "-" in options:
-                            residual = -residual
+                        xpos.append(xPos)
+                        minu.append(minuent)
+                        subt.append(subtrahent)
+                        minu_err.append(minuent_err)
+                        subt_err.append(subtrahent_err)
                         
-                        if residual < minRes:
-                            minRes = residual
-                        if residual > maxRes:
-                            maxRes = residual
-                        
-                        tmp.SetPoint(i, xPos, residual)
-                        tmp.SetPointError(i, 0, 0, residual_err, residual_err)
                 
                 
                 else:
                     print "Error in drawResiduals: Invalid type of minuent ", h2
                     exit()
                 
-                l = self.plotPad.GetUxmin()
-                t = self.plotPad.GetUxmax()
                 
-                tmp.SetPoint(i+1, l-0.01*(t-l),0)
-                tmp.SetPoint(i+2, t+0.01*(t-l),0)
+                for i, (xPos, minuent, subtrahent, minuent_err, subtrahent_err) in enumerate(zip(xpos, minu, subt, minu_err, subt_err)):
+                    residual = minuent - subtrahent
+                    if residual >= 0:
+                        i_m = 0
+                        i_s = 1
+                    else:
+                        i_m = 1
+                        i_s = 0
+                        
+                    residual_err = (minuent_err[i_m]**2 + subtrahent_err[i_s]**2 )**0.5
+                    if errList != None:
+                        residual_err = errList[i]
+                    
+                    if "P" in options:
+                        if residual_err > 0:
+                            residual /= residual_err
+                            residual_err = 1
+                        else:
+                            residual = 0
+                            residual_err = 0
+                    if "-" in options:
+                        residual = -residual
+                    
+                    if residual < minRes:
+                        minRes = residual
+                    if residual > maxRes:
+                        maxRes = residual
+                    
+                    tmp.SetPoint(i, xPos, residual)
+                    tmp.SetPointError(i, 0, 0, residual_err, residual_err)
+                
                 
                 if "H" in options:
                     tmp.Draw("same BX")
@@ -780,6 +770,34 @@ class plotTemplate:
                     self.legend.AddEntry(plot, label, drawOpt)
             
             self.legend.Draw("same")
+            
+
+customColors = [(255,0,0), (244,108,72), (255,134,0), (163,149,115), (149,122,0), (0,198,0), (0,213,76), (0,171,140), (0,210,255), (0,136,242), (145,150,159), (194,148,255), (211,115,204), (221,113,178), (255,0,67), (240,0,0), (255,135,106), (255,176,83), (121,111,86), (134,211,0), (0,198,0), (0,184,72), (0,128,105), (0,131,164), (0,105,190), (186,190,199), (143,80,205), (255,182,248), (255,153,210), (232,111,143), (239,0,0), (255,177,154), (255,147,0), (139,123,81), (190,190,190), (0,183,0), (91,213,142), (0,255,215), (0,175,229), (0,121,248), (102,142,255), (154,0,255), (255,0,226), (181,72,130), (189,70,97), (240,0,0), (255,82,22), (255,161,0), (212,188,125), (176,176,176), (0,183,0), (0,141,65), (0,231,215), (0,146,195), (93,153,220), (54,103,255), (197,117,230), (212,0,175), (255,0,133), (255,85,118), (239,0,0), (183,53,0), (212,203,185), (170,148,87), (163,163,163), (0,183,0), (0,117,55), (0,186,174), (131,223,255), (73,114,162), (142,168,255), (230,159,255), (255,76,221), (255,67,159), (255,0,39), (239,109,108), (230,94,40), (115,111,103), (113,98,58), (150,150,150), (0,141,0), (0,228,121), (0,129,122), (0,179,255), (190,220,255), (177,195,255), (239,189,255), (255,155,237), (255,107,176), (255,165,178), (255,83,78), (255,163,122), (154,149,141), (129,110,51), (111,111,111), (0,140,0), (0,184,102), (0,231,234), (0,121,173), (146,193,254), (59,76,243), (202,21,255), (255,111,222), (255,0,112), (236,110,126), (194,68,64), (255,135,77), (194,190,181), (218,187,95), (81,170,21), (0,140,0), (0,255,167), (0,187,192), (0,147,212), (90,113,145), (133,125,255), (160,77,180), (255,0,192), (227,112,160), (192,69,81), (255,178,173), (232,93,0), (255,175,0), (175,147,57), (139,226,82), (0,140,0), (0,142,92), (0,144,152), (114,209,255), (122,152,194), (165,151,255), (239,0,255), (175,74,146), (255,180,210), (255,84,99), (255,150,138), (255,148,79), (233,217,180), (255,214,63), (104,198,79), (124,226,126), (0,118,81), (0,236,255), (0,148,239), (135,151,176), (104,71,217), (250,88,255), (255,0,166), (255,0,92), (255,150,156), (242,109,91), (255,176,116), (188,175,149), (121,97,0), (0,227,0), (65,170,74), (0,185,129), (0,188,210), (0,123,198), (175,191,218), (134,96,246), (201,0,201), (255,181,229), (185,71,113), (255,82,55), (255,120,0), (157,149,132), (211,173,0), (0,198,0), (0,117,24), (0,229,169), (0,130,147), (166,221,255), (102,112,128), (197,178,255), (255,121,255), (224,0,135), (255,86,136), (197,68,37), (255,162,81), (193,175,131), (180,147,0), (0,198,0), (0,255,80), (36,214,179), (0,174,211), (112,195,255), (208,219,237), (172,121,255), (154,62,149), (255,90,190), (255,152,183)]            
+colorPosition = 0
+switch = False
+colors = []
+
+def getNewColor():
+    global colorPosition
+    global customColors
+    global colors
+    global switch
+    if colorPosition >= len(customColors):
+        colorPosition = 0
+        if not switch:
+            switch = True
+    
+    if not switch:
+        tempColor = ROOT.TColor(2100+colorPosition, float(customColors[colorPosition][0]) / 255, float(customColors[colorPosition][1]) / 255, float(customColors[colorPosition][2]) / 255)        
+        colors.append(tempColor)
+        
+    pos = 2100+colorPosition
+    colorPosition += 1
+    return pos
+    
+
+
+            
             
 # simple example on how to create a custom template
 class plotTemplate2D(plotTemplate):

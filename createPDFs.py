@@ -129,6 +129,7 @@ def fitVariables(useExistingDataSet, runRange, region, puReweighting, verbose):
     
     from fitConfig import fitConfig
     theConfig = fitConfig(region,runRange)
+    theConfig.puReweighting = puReweighting
     
     if puReweighting:
         puString = ""

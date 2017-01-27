@@ -9,11 +9,14 @@ from centralConfig import versions
 class fitConfig:               
                 useMC = True
                 mcdatasets = ["TT_Powheg"]
+                signaldatasets = [""]
                 dataset = ["MergedData"]
                 
                 dataSetPath = locations.dataSetPath
                 task = versions.cuts+"DileptonFinalTrees"
                 flag = locations.dataSetPath.split("/")[-2]
+                
+                puReweighting = False
                 
                 def __init__(self,region="SignalInclusive",runName = "Full2012"):
                         sys.path.append(pathes.basePath)

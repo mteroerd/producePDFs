@@ -33,7 +33,7 @@ ROOT.gROOT.ProcessLine(\
                                                      Double_t lepsZPt_Edge;\
                                                     };")
 
-def getMCTrees(theConfig):
+def getMCTrees(theConfig, signals=None, signalPath=None):
     treePathOF = "/EMuDileptonTree"
     treePathEE = "/EEDileptonTree"
     treePathMM = "/MuMuDileptonTree"
@@ -42,34 +42,48 @@ def getMCTrees(theConfig):
     treesMCEE = ROOT.TList()
     treesMCMM = ROOT.TList()
 
-    
     cut = theConfig.selection.cut
     
-    for dataset in theConfig.mcdatasets:
+    if signals == None:
+        datasets = theConfig.mcdatasets
+        flag = theConfig.flag
+        path = theConfig.dataSetPath
+    else:
+        datasets = signals
+        
+        flag = (signalPath.split("/")[-2]).split("_")[0]
+        path = signalPath
+        
+    for dataset in datasets:
         scale = 0.0
 
         # dynamic scaling
-        jobs = getattr(Backgrounds, dataset).subprocesses
+        if signals == None:
+            jobs = getattr(Backgrounds, dataset).subprocesses
+        else:
+            jobs = signals
         if (len(jobs) > 1):
                 log.logDebug("Scaling and adding more than one job: %s" % (jobs))
         for job in jobs:
-            treeMCOFraw = getTreeFromJob(theConfig.dataSetPath, theConfig.flag, theConfig.task, job, theConfig.runRange, treePathOF, cut=cut)
-            treeMCEEraw = getTreeFromJob(theConfig.dataSetPath, theConfig.flag, theConfig.task, job, theConfig.runRange, treePathEE, cut=cut)
-            treeMCMMraw = getTreeFromJob(theConfig.dataSetPath, theConfig.flag, theConfig.task, job, theConfig.runRange, treePathMM, cut=cut)
+            treeMCOFraw = getTreeFromJob(path, flag, theConfig.task, job, theConfig.runRange, treePathOF, cut=cut)
+            treeMCEEraw = getTreeFromJob(path, flag, theConfig.task, job, theConfig.runRange, treePathEE, cut=cut)
+            treeMCMMraw = getTreeFromJob(path, flag, theConfig.task, job, theConfig.runRange, treePathMM, cut=cut)
             
-            dynXsection = eval(config.get(job,"crosssection"))
-            from helpers import totalNumberOfGeneratedEvents
-            dynNTotal = totalNumberOfGeneratedEvents(theConfig.dataSetPath)[job]
-            
-            dynScale = dynXsection * theConfig.runRange.lumi / dynNTotal
-            #dynScale = 1 # No scaling to xsec
+            if signals == None:
+                dynXsection = eval(config.get(job,"crosssection"))
+                from helpers import totalNumberOfGeneratedEvents
+                dynNTotal = totalNumberOfGeneratedEvents(theConfig.dataSetPath)[job]
+                
+                dynScale = dynXsection * theConfig.runRange.lumi / dynNTotal
+            else: 
+                dynScale = 1.0
             
             # convert trees
-            treesMCOF.Add(convertDileptonTree(treeMCOFraw, weight=dynScale))
+            treesMCOF.Add(convertDileptonTree(treeMCOFraw, weight=dynScale, puReweighting=theConfig.puReweighting))
             treeMCOFraw = None
-            treesMCEE.Add(convertDileptonTree(treeMCEEraw, weight=dynScale))
+            treesMCEE.Add(convertDileptonTree(treeMCEEraw, weight=dynScale, puReweighting=theConfig.puReweighting))
             treeMCEEraw = None
-            treesMCMM.Add(convertDileptonTree(treeMCMMraw, weight=dynScale))
+            treesMCMM.Add(convertDileptonTree(treeMCMMraw, weight=dynScale, puReweighting=theConfig.puReweighting))
             treeMCMMraw = None
                     
     treeMCOFtotal = ROOT.TTree.MergeTrees(treesMCOF)
