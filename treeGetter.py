@@ -137,8 +137,8 @@ def getTreeFromDataset(dataSetPath, flag, task, dataset, runRange, treePath, cut
         log.logError("Adding trees for multiple jobs without scaling!")
     
     cut += runRange.runCut
-    if runRange.label != "Run2016_12_9fb":
-        cut += " && (acos((vMet.Px()*jet1.Px()+vMet.Py()*jet1.Py())/vMet.Pt()/jet1.Pt()) > 0.4) && (acos((vMet.Px()*jet2.Px()+vMet.Py()*jet2.Py())/vMet.Pt()/jet2.Pt()) > 0.4)"
+    #if runRange.label != "Run2016_12_9fb":
+        #cut += " && (acos((vMet.Px()*jet1.Px()+vMet.Py()*jet1.Py())/vMet.Pt()/jet1.Pt()) > 0.4) && (acos((vMet.Px()*jet2.Px()+vMet.Py()*jet2.Py())/vMet.Pt()/jet2.Pt()) > 0.4)"
     
     tree = ROOT.TChain("%s%s" % (task, treePath))
     for job in jobList:
